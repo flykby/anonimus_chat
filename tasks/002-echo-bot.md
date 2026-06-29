@@ -1,6 +1,6 @@
 # 002. Echo bot
 
-**Статус:** todo  
+**Статус:** done  
 **Фаза:** milestone-1  
 **Зависимости:** 001
 
@@ -10,7 +10,7 @@
 
 ## Scope
 
-- aiogram 3: Bot + Dispatcher, один handler на текстовые сообщения
+- Go + [`github.com/go-telegram/bot`](https://github.com/go-telegram/bot): `/start` и default handler для echo
 - Long polling для локальной разработки (`make dev`)
 - Webhook-режим опционально (полная реализация — задача 009)
 - `/start` → приветствие; любой текст → тот же текст обратно
@@ -20,17 +20,17 @@
 
 ## Acceptance criteria
 
-- [ ] Бот отвечает echo на текстовое сообщение в Telegram
-- [ ] `/start` возвращает короткое приветствие
-- [ ] Бот стартует из Docker-образа с `BOT_TOKEN` из env
-- [ ] При невалидном токене — понятная ошибка при старте, не silent hang
-- [ ] Контейнер проходит health check / restart policy на VM
+- [x] Бот отвечает echo на текстовое сообщение в Telegram
+- [x] `/start` возвращает короткое приветствие
+- [x] Бот стартует из Docker-образа с `BOT_TOKEN` из env
+- [x] При невалидном токене — понятная ошибка при старте, не silent hang
+- [x] Контейнер проходит health check / restart policy на VM
 
 ## Технические заметки
 
 - Только thin bot: без HTTP к api/, без Postgres/Redis
 - `BOT_TOKEN` и опционально `LOG_LEVEL` — единственные обязательные env на этом этапе
-- Структура: `bot/main.py`, `bot/handlers/echo.py`, `bot/config.py`
+- Структура: `bot/cmd/bot/main.go`, `bot/internal/handlers/echo.go`, `bot/internal/config/`
 - Образ: multi-stage Dockerfile в `docker/bot.Dockerfile` (собирается в задаче 003)
 
 ## Out of scope

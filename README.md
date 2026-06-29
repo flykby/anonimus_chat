@@ -36,7 +36,7 @@ make lint
 make test
 
 # Запуск stubs
-make dev-bot    # Go bot — GET http://localhost:8080/health
+make dev-bot    # long polling; нужен BOT_TOKEN в .env
 make dev-api    # API  — GET http://localhost:8000/health
 make dev-ai     # AI   — GET http://localhost:8001/health
 ```
