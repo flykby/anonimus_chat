@@ -2,6 +2,14 @@
 
 Telegram-бот для анонимного общения и обмена фотографиями.
 
+## Стек
+
+| Сервис | Язык | Назначение |
+|--------|------|------------|
+| **bot/** | **Go 1.22+** | Telegram I/O, webhook, FSM, меню |
+| **api/** | Python 3.12 + FastAPI | Core API, users, dialogs, payments |
+| **ai/** | Python 3.12 + FastAPI | LLM/embeddings proxy → RunPod |
+
 ## Принципы деплоя
 
 - **Prod VM:** все runtime-сервисы (bot, api, ai, **postgres, redis**) — Docker-контейнеры на виртуалке

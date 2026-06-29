@@ -6,17 +6,17 @@
 
 ## Описание
 
-Минимально работающий Telegram-бот: поднимается, принимает сообщения и отвечает тем же текстом (echo). Первый end-to-end сценарий для проверки деплоя и CI до подключения БД, Redis и бизнес-логики.
+Минимально работающий Telegram-бот на **Go**: поднимается, принимает сообщения и отвечает тем же текстом (echo). Первый end-to-end сценарий для проверки деплоя и CI до подключения БД, Redis и бизнес-логики.
 
 ## Scope
 
-- aiogram 3: Bot + Dispatcher, один handler на текстовые сообщения
-- Long polling для локальной разработки (`make dev`)
+- Go + [`github.com/go-telegram/bot`](https://github.com/go-telegram/bot): handler на текстовые сообщения
+- Long polling для локальной разработки (`make dev-bot`)
 - Webhook-режим опционально (полная реализация — задача 009)
 - `/start` → приветствие; любой текст → тот же текст обратно
-- Health endpoint или простой `GET /health` (если bot поднимается через FastAPI sidecar)
-- Логирование: update_id, user_id, message length
-- Graceful shutdown по SIGTERM (важно для Docker)
+- `GET /health` на `:8080` (отдельный goroutine / `net/http`) для Docker healthcheck
+- Structured logging: `slog` — update_id, user_id, message length
+- Graceful shutdown по SIGTERM/SIGINT (важно для Docker)
 
 ## Acceptance criteria
 
@@ -24,14 +24,18 @@
 - [ ] `/start` возвращает короткое приветствие
 - [ ] Бот стартует из Docker-образа с `BOT_TOKEN` из env
 - [ ] При невалидном токене — понятная ошибка при старте, не silent hang
-- [ ] Контейнер проходит health check / restart policy на VM
+- [ ] `GET /health` → 200; контейнер проходит health check на VM
 
 ## Технические заметки
 
 - Только thin bot: без HTTP к api/, без Postgres/Redis
-- `BOT_TOKEN` и опционально `LOG_LEVEL` — единственные обязательные env на этом этапе
-- Структура: `bot/main.py`, `bot/handlers/echo.py`, `bot/config.py`
-- Образ: multi-stage Dockerfile в `docker/bot.Dockerfile` (собирается в задаче 003)
+- `BOT_TOKEN`, `LOG_LEVEL` — обязательные env на этом этапе
+- Структура:
+  - `bot/cmd/bot/main.go`
+  - `bot/internal/handlers/echo.go`
+  - `bot/internal/config/config.go`
+- Образ: multi-stage `docker/bot.Dockerfile` — `golang:1.22` builder → `distroless`/`alpine` runtime со static binary
+- Сборка образа — в задаче 003
 
 ## Out of scope
 

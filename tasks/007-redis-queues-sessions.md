@@ -12,10 +12,11 @@
 
 - **Match queue (P2P):** sorted set или list `queue:p2p:male` — telegram_id / user_id + timestamp
 - **Active sessions:** hash `session:{user_id}` → dialog_id, type, partner_id, persona_id, started_at
-- **FSM state:** `fsm:{telegram_id}` — текущее состояние бота (TTL 24h)
+- **FSM state:** `fsm:{telegram_id}` — состояние Go-бота (TTL 24h)
 - **Rate limits:** `ratelimit:{user_id}:{action}` — счётчик с TTL (сообщения, поиск, фото)
 - **Dialog context (AI):** list `dialog_ctx:{dialog_id}` — последние N сообщений для LLM
-- Python-клиент: `redis.asyncio`, connection pool
+- **Bot (Go):** `github.com/redis/go-redis/v9` — FSM, rate limits
+- **API (Python):** `redis.asyncio` — очереди матчинга, dialog sessions
 
 ## Acceptance criteria
 

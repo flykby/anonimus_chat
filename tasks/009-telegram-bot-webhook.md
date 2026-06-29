@@ -6,17 +6,17 @@
 
 ## Описание
 
-Перевести бота с long polling (002) на webhook для prod на VM. HTTPS через reverse proxy. Бот принимает updates, маршрутизирует в handlers; бизнес-логика позже через HTTP к Core API.
+Перевести Go-бота с long polling (002) на webhook для prod на VM. HTTPS через reverse proxy. Бот принимает updates, маршрутизирует в handlers; бизнес-логика позже через HTTP к Core API.
 
 ## Scope
 
-- Эволюция echo-бота (002): aiogram 3 Bot + Dispatcher
-- `POST /telegram/webhook` — endpoint для Telegram updates
+- Эволюция echo-бота (002): `go-telegram/bot` в webhook mode
+- `POST /telegram/webhook` — `net/http` или chi router
 - Регистрация webhook: `setWebhook(url, secret_token)`
 - Secret token validation → 403 при mismatch
-- Middleware: логирование update_id, user_id, latency
-- HTTP-клиент к Core API (`httpx.AsyncClient`) — заготовка
-- Обработка: message, callback_query, pre_checkout_query, successful_payment (stub handlers)
+- Middleware: structured logging (update_id, user_id, latency)
+- HTTP-клиент к Core API — `net/http` или `resty` (заготовка)
+- Handlers (stub): message, callback_query, pre_checkout_query, successful_payment
 - nginx/caddy на VM: TLS termination → bot container
 
 ## Acceptance criteria
@@ -24,8 +24,8 @@
 - [ ] Бот отвечает на `/start` и echo через webhook (не polling)
 - [ ] Webhook зарегистрирован на prod HTTPS URL
 - [ ] Invalid secret token → 403
-- [ ] Ошибки не роняют процесс (graceful error message)
-- [ ] Health endpoint независим от webhook
+- [ ] Ошибки не роняют процесс (graceful error message пользователю)
+- [ ] `GET /health` независим от webhook handler
 
 ## Технические заметки
 
@@ -33,7 +33,7 @@
 - Dev: ngrok → local webhook URL
 - `allowed_updates`: message, callback_query, pre_checkout_query, successful_payment
 - Bot token только в env
-- Разделение: bot = thin client, api = state + business rules
+- Разделение: **Go bot** = thin client, **Python api** = state + business rules
 
 ## Out of scope
 

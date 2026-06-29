@@ -11,6 +11,7 @@
 ## Scope
 
 - FSM states: `Age` → `Gender` → `Seeking` → `Language` → `Done`
+- Реализация FSM на Go: state machine в `bot/internal/fsm/` + Redis backend (007)
 - **Возраст:** числовой ввод, валидация 18–99, отказ при < 18
 - **Пол:** inline-кнопки Парень / Девушка
 - **Ищу:** inline-кнопки Парень / Девушка
