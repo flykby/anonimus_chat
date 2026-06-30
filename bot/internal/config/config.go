@@ -11,20 +11,25 @@ import (
 var ErrMissingBotToken = errors.New("BOT_TOKEN is required")
 
 type Config struct {
-	BotToken string
-	HTTPAddr string
-	LogLevel slog.Level
+	BotToken   string
+	HTTPAddr   string
+	LogLevel   slog.Level
+	HealthOnly bool
 }
 
 func Load() Config {
 	return Config{
-		BotToken: os.Getenv("BOT_TOKEN"),
-		HTTPAddr: envOrDefault("HTTP_ADDR", ":8080"),
-		LogLevel: parseLogLevel(os.Getenv("LOG_LEVEL")),
+		BotToken:   os.Getenv("BOT_TOKEN"),
+		HTTPAddr:   envOrDefault("HTTP_ADDR", ":8080"),
+		LogLevel:   parseLogLevel(os.Getenv("LOG_LEVEL")),
+		HealthOnly: envBool("BOT_HEALTH_ONLY"),
 	}
 }
 
 func (c Config) Validate() error {
+	if c.HealthOnly {
+		return nil
+	}
 	if strings.TrimSpace(c.BotToken) == "" {
 		return ErrMissingBotToken
 	}
@@ -36,6 +41,15 @@ func envOrDefault(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func envBool(key string) bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(key))) {
+	case "1", "true", "yes", "on":
+		return true
+	default:
+		return false
+	}
 }
 
 func parseLogLevel(raw string) slog.Level {

@@ -20,6 +20,15 @@ func TestValidateRequiresBotToken(t *testing.T) {
 	}
 }
 
+func TestValidateHealthOnlySkipsToken(t *testing.T) {
+	t.Parallel()
+
+	cfg := Config{HealthOnly: true}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("Validate() = %v, want nil for health-only mode", err)
+	}
+}
+
 func TestParseLogLevel(t *testing.T) {
 	t.Parallel()
 

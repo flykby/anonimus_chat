@@ -52,7 +52,7 @@ flowchart TD
 |---|--------|--------|
 | 001 | [Project scaffold](001-project-scaffold.md) | done |
 | 002 | [Echo bot](002-echo-bot.md) | done |
-| 003 | [CI pipeline (build, test, lint)](003-ci-pipeline.md) | todo |
+| 003 | [CI pipeline (build, test, lint)](003-ci-pipeline.md) | done |
 | 004 | [VM deploy + internal registry](004-vm-deploy-registry.md) | todo |
 
 **Результат milestone 1:** echo-бот в Telegram, образ собирается в CI, деплоится на VM из registry.

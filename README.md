@@ -39,6 +39,11 @@ make test
 make dev-bot    # long polling; нужен BOT_TOKEN в .env
 make dev-api    # API  — GET http://localhost:8000/health
 make dev-ai     # AI   — GET http://localhost:8001/health
+
+# CI (локально или на VM)
+make ci                   # lint → test → build → smoke → push
+bash scripts/ci-docker.sh # CI в контейнере через docker.sock
+cp .env.ci.example .env.ci  # registry credentials для push
 ```
 
 ## Backlog

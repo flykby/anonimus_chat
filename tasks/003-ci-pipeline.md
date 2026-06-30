@@ -1,6 +1,6 @@
 # 003. CI pipeline (build, test, lint)
 
-**Статус:** todo  
+**Статус:** done  
 **Фаза:** milestone-1  
 **Зависимости:** 001, 002
 
@@ -10,12 +10,12 @@
 
 ## Scope
 
-- `docker/ci.Dockerfile` — образ с Python 3.12, ruff, pytest, docker-cli (dind sidecar или socket mount)
+- `docker/ci.Dockerfile` — Go 1.22, golangci-lint, Python 3.12, ruff, pytest, docker-cli
 - `Makefile` targets: `lint`, `test`, `build`, `push`
 - `.github/workflows/ci.yml` **или** `scripts/ci.sh` + cron/webhook на VM (git push → запуск CI-контейнера)
 - Pipeline stages:
-  1. `lint` — ruff check + format check
-  2. `test` — pytest (минимум smoke-тест echo handler)
+  1. `lint` — golangci-lint + ruff
+  2. `test` — go test + pytest
   3. `build` — `docker build` для bot (и заготовки api/ai)
   4. `push` — tag `registry.internal/anonimus/bot:$GIT_SHA` + `:latest`
 - Кеш pip/docker layers между прогонами
@@ -23,11 +23,11 @@
 
 ## Acceptance criteria
 
-- [ ] Push в main/master запускает pipeline на VM (или через GitHub Actions runner на VM)
-- [ ] Lint и тесты блокируют push образа при падении
-- [ ] Успешный прогон публикует образ bot в internal registry
-- [ ] Образ из registry запускается и проходит echo smoke test
-- [ ] Секреты (registry credentials, BOT_TOKEN для e2e) не попадают в образ и git
+- [x] Push в main/master запускает pipeline на VM (или через GitHub Actions runner на VM)
+- [x] Lint и тесты блокируют push образа при падении
+- [x] Успешный прогон публикует образ bot в internal registry
+- [x] Образ из registry запускается и проходит echo smoke test
+- [x] Секреты (registry credentials, BOT_TOKEN для e2e) не попадают в образ и git
 
 ## Технические заметки
 
