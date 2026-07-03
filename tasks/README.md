@@ -63,7 +63,7 @@ flowchart TD
 
 | # | Задача | Статус |
 |---|--------|--------|
-| 005 | [Docker Compose (dev + prod stack)](005-docker-compose.md) | todo |
+| 005 | [Docker Compose (dev + prod stack)](005-docker-compose.md) | done |
 | 006 | [Database schema](006-database-schema.md) | todo |
 | 007 | [Redis queues & sessions](007-redis-queues-sessions.md) | todo |
 | 008 | [Event logging](008-event-logging.md) | todo |

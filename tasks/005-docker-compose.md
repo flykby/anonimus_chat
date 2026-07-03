@@ -1,6 +1,6 @@
 # 005. Docker Compose (dev + prod stack)
 
-**Статус:** todo  
+**Статус:** done  
 **Фаза:** infra  
 **Зависимости:** 001
 
@@ -20,11 +20,11 @@
 
 ## Acceptance criteria
 
-- [ ] `docker compose up` поднимает postgres + redis без ошибок
-- [ ] API и AI stubs отвечают на `GET /health` → `200 OK`
-- [ ] Данные Postgres сохраняются между перезапусками (named volume)
-- [ ] Тот же compose (с prod override) работает на VM после pull из registry (004)
-- [ ] RunPod URL'ы прокидываются в `ai` через env, не hardcode
+- [x] `docker compose up` поднимает postgres + redis без ошибок
+- [x] API и AI stubs отвечают на `GET /health` → `200 OK`
+- [x] Данные Postgres сохраняются между перезапусками (named volume)
+- [x] Тот же compose (с prod override) работает на VM после pull из registry (004)
+- [x] RunPod URL'ы прокидываются в `ai` через env, не hardcode
 
 ## Технические заметки
 

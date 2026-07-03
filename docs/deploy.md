@@ -24,9 +24,10 @@ bash scripts/deploy.sh --tag latest
 Verify:
 
 ```bash
-docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
 curl http://127.0.0.1:8080/health
-# Send a message to the bot in Telegram
+curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8001/health
 ```
 
 ## Deploy new version
@@ -94,5 +95,5 @@ Adjust `WorkingDirectory` in the unit file if not using `/opt/anonimus_chat`.
 
 ## Next steps
 
-- **005** — add postgres + redis to compose
+- **006** — database schema and Alembic migrations
 - **009** — webhook + HTTPS via Caddy

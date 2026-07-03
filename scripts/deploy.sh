@@ -5,7 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml}"
+COMPOSE_PROD_FILE="${COMPOSE_PROD_FILE:-docker-compose.prod.yml}"
 ENV_FILE="${ENV_FILE:-.env}"
 DEPLOY_STATE_DIR="${DEPLOY_STATE_DIR:-.deploy}"
 CONTAINER_NAME="${CONTAINER_NAME:-anonimus-bot}"
@@ -109,19 +110,25 @@ registry_login() {
 	fi
 }
 
-pull_image() {
+pull_images() {
 	if [[ "$SKIP_PULL" == true ]]; then
 		log "skip pull"
 		return
 	fi
-	local image="${REGISTRY_URL}/bot:${IMAGE_TAG}"
-	log "pulling $image"
-	docker pull "$image"
+	for svc in bot api ai; do
+		local image="${REGISTRY_URL}/${svc}:${IMAGE_TAG}"
+		log "pulling $image"
+		docker pull "$image"
+	done
+}
+
+compose() {
+	docker compose -f "$COMPOSE_FILE" -f "$COMPOSE_PROD_FILE" "$@"
 }
 
 compose_up() {
 	export IMAGE_TAG
-	local -a cmd=(docker compose -f "$COMPOSE_FILE" up -d --remove-orphans)
+	local -a cmd=(compose up -d --remove-orphans)
 	if [[ "$WITH_PROXY" == true ]]; then
 		cmd+=(--profile proxy)
 	fi
@@ -164,7 +171,7 @@ save_deploy_state() {
 }
 
 show_status() {
-	docker compose -f "$COMPOSE_FILE" ps
+	compose ps
 }
 
 main() {
@@ -172,12 +179,12 @@ main() {
 	load_env
 	resolve_tag
 	registry_login
-	pull_image
+	pull_images
 	compose_up
 	wait_healthy
 	save_deploy_state
 	show_status
-	log "deploy complete: ${REGISTRY_URL}/bot:${IMAGE_TAG}"
+	log "deploy complete: ${REGISTRY_URL}/*:${IMAGE_TAG}"
 }
 
 main "$@"

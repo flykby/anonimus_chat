@@ -45,14 +45,19 @@ make ci                   # lint → test → build → smoke → push
 bash scripts/ci-docker.sh # CI в контейнере через docker.sock
 cp .env.ci.example .env.ci  # registry credentials для push
 
-# Production VM deploy (004)
+# Dev hot-reload (optional)
+cp docker-compose.override.yml.example docker-compose.override.yml
+make compose-up          # postgres + redis + bot + api + ai
+make compose-up-infra    # only postgres + redis
+make compose-down
+
+# Production VM (004+005)
 cp .env.prod.example .env
 bash scripts/deploy.sh --tag latest
-# docs: docs/deploy.md
 ```
 
 ## Backlog
 
 Задачи проекта: [tasks/README.md](tasks/README.md)
 
-**Milestone 1:** 001 → 002 → 003 → **004** — scaffold, echo-бот, CI, деплой на VM. Runbook: [docs/deploy.md](docs/deploy.md).
+**Milestone 1:** 001–004 ✅. **Infra:** 005 ✅ docker compose stack. Runbook: [docs/deploy.md](docs/deploy.md).

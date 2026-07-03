@@ -1,10 +1,14 @@
 .PHONY: dev dev-bot dev-api dev-ai lint lint-go lint-py test build build-bot build-docker \
-	push push-bot push-api push-ai deploy deploy-rollback deploy-check migrate fmt help ci install-py tidy
+	push push-bot push-api push-ai deploy deploy-rollback deploy-check \
+	compose-up compose-down compose-ps compose-logs compose-config migrate fmt help ci install-py tidy
 
 PYTHON ?= python3
 PIP ?= $(PYTHON) -m pip
 BOT_DIR := bot
 BIN_DIR := bin
+COMPOSE ?= docker compose
+COMPOSE_FILES := -f docker-compose.yml
+COMPOSE_PROD_FILES := -f docker-compose.yml -f docker-compose.prod.yml
 
 GIT_SHA ?= $(shell git rev-parse HEAD)
 GIT_SHA_SHORT ?= $(shell git rev-parse --short HEAD)
@@ -15,7 +19,27 @@ REGISTRY_HOST ?= $(firstword $(subst /, ,$(REGISTRY_URL)))
 BOT_IMAGE ?= anonimus/bot:local
 
 help:
-	@echo "Targets: dev-bot dev-api dev-ai lint test build build-docker push ci deploy migrate fmt"
+	@echo "Targets: compose-up compose-down dev-bot lint test build-docker push ci deploy migrate fmt"
+
+# --- Docker Compose (005+) ---
+
+compose-up:
+	$(COMPOSE) $(COMPOSE_FILES) up -d --build
+
+compose-up-infra:
+	$(COMPOSE) $(COMPOSE_FILES) up -d postgres redis
+
+compose-down:
+	$(COMPOSE) $(COMPOSE_FILES) down
+
+compose-ps:
+	$(COMPOSE) $(COMPOSE_FILES) ps
+
+compose-logs:
+	$(COMPOSE) $(COMPOSE_FILES) logs -f
+
+compose-config:
+	$(COMPOSE) $(COMPOSE_PROD_FILES) config
 
 # --- Dev ---
 
@@ -128,13 +152,21 @@ push-bot: build-docker-bot
 
 push-api: build-docker-api
 	@test -n "$(REGISTRY_URL)" || (echo "REGISTRY_URL is required for push" && exit 1)
+	docker tag anonimus/api:local $(REGISTRY_URL)/api:$(GIT_SHA)
 	docker tag anonimus/api:local $(REGISTRY_URL)/api:$(GIT_SHA_SHORT)
+	@if [ "$(GIT_BRANCH)" = "main" ]; then docker tag anonimus/api:local $(REGISTRY_URL)/api:latest; fi
+	docker push $(REGISTRY_URL)/api:$(GIT_SHA)
 	docker push $(REGISTRY_URL)/api:$(GIT_SHA_SHORT)
+	@if [ "$(GIT_BRANCH)" = "main" ]; then docker push $(REGISTRY_URL)/api:latest; fi
 
 push-ai: build-docker-ai
 	@test -n "$(REGISTRY_URL)" || (echo "REGISTRY_URL is required for push" && exit 1)
+	docker tag anonimus/ai:local $(REGISTRY_URL)/ai:$(GIT_SHA)
 	docker tag anonimus/ai:local $(REGISTRY_URL)/ai:$(GIT_SHA_SHORT)
+	@if [ "$(GIT_BRANCH)" = "main" ]; then docker tag anonimus/ai:local $(REGISTRY_URL)/ai:latest; fi
+	docker push $(REGISTRY_URL)/ai:$(GIT_SHA)
 	docker push $(REGISTRY_URL)/ai:$(GIT_SHA_SHORT)
+	@if [ "$(GIT_BRANCH)" = "main" ]; then docker push $(REGISTRY_URL)/ai:latest; fi
 
 # --- Migrations (006+) ---
 

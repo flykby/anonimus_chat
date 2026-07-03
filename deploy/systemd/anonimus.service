@@ -10,8 +10,8 @@ Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=/opt/anonimus_chat
 EnvironmentFile=-/opt/anonimus_chat/.env
-ExecStart=/usr/bin/docker compose -f docker-compose.prod.yml up -d --remove-orphans
-ExecStop=/usr/bin/docker compose -f docker-compose.prod.yml down
+ExecStart=/usr/bin/docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --remove-orphans
+ExecStop=/usr/bin/docker compose -f docker-compose.yml -f docker-compose.prod.yml down
 ExecReload=/opt/anonimus_chat/scripts/deploy.sh
 TimeoutStartSec=180
 
