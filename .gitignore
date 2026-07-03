@@ -3,6 +3,10 @@
 .env.*
 !.env.example
 !.env.ci.example
+!.env.prod.example
+
+# Deploy state (image tags only)
+.deploy/
 
 # Go
 bin/

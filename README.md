@@ -44,10 +44,15 @@ make dev-ai     # AI   — GET http://localhost:8001/health
 make ci                   # lint → test → build → smoke → push
 bash scripts/ci-docker.sh # CI в контейнере через docker.sock
 cp .env.ci.example .env.ci  # registry credentials для push
+
+# Production VM deploy (004)
+cp .env.prod.example .env
+bash scripts/deploy.sh --tag latest
+# docs: docs/deploy.md
 ```
 
 ## Backlog
 
 Задачи проекта: [tasks/README.md](tasks/README.md)
 
-**Milestone 1:** 001 → 002 → 003 → 004 — scaffold, echo-бот, CI, деплой на VM.
+**Milestone 1:** 001 → 002 → 003 → **004** — scaffold, echo-бот, CI, деплой на VM. Runbook: [docs/deploy.md](docs/deploy.md).

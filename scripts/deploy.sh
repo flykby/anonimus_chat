@@ -1,0 +1,183 @@
+#!/usr/bin/env bash
+# Deploy or rollback production stack on VM: pull image → compose up → health check.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
+ENV_FILE="${ENV_FILE:-.env}"
+DEPLOY_STATE_DIR="${DEPLOY_STATE_DIR:-.deploy}"
+CONTAINER_NAME="${CONTAINER_NAME:-anonimus-bot}"
+HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:${BOT_HTTP_PORT:-8080}/health}"
+IMAGE_TAG=""
+CLI_IMAGE_TAG=""
+ROLLBACK=false
+WITH_PROXY=false
+SKIP_PULL=false
+
+log() {
+	echo "[deploy] $*"
+}
+
+die() {
+	echo "[deploy] error: $*" >&2
+	exit 1
+}
+
+usage() {
+	cat <<EOF
+usage: $0 [--tag TAG] [--rollback] [--env-file PATH] [--with-proxy] [--skip-pull]
+
+  --tag TAG        Deploy specific image tag (default: IMAGE_TAG from .env)
+  --rollback       Deploy previous successful tag from ${DEPLOY_STATE_DIR}/previous
+  --env-file PATH  Env file path (default: .env)
+  --with-proxy     Start Caddy reverse proxy profile
+  --skip-pull      Skip docker pull (use local image)
+EOF
+}
+
+parse_args() {
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+		--tag)
+			CLI_IMAGE_TAG="$2"
+			shift 2
+			;;
+		--rollback)
+			ROLLBACK=true
+			shift
+			;;
+		--env-file)
+			ENV_FILE="$2"
+			shift 2
+			;;
+		--with-proxy)
+			WITH_PROXY=true
+			shift
+			;;
+		--skip-pull)
+			SKIP_PULL=true
+			shift
+			;;
+		-h | --help)
+			usage
+			exit 0
+			;;
+		*)
+			die "unknown argument: $1 (try --help)"
+			;;
+		esac
+	done
+}
+
+load_env() {
+	[[ -f "$ENV_FILE" ]] || die "env file not found: $ENV_FILE (copy .env.prod.example)"
+	set -a
+	# shellcheck disable=SC1090
+	source "$ENV_FILE"
+	set +a
+	if [[ -n "$CLI_IMAGE_TAG" ]]; then
+		IMAGE_TAG="$CLI_IMAGE_TAG"
+	fi
+	export ENV_FILE
+	export IMAGE_TAG
+	export BOT_HTTP_PORT="${BOT_HTTP_PORT:-8080}"
+	HEALTH_URL="http://127.0.0.1:${BOT_HTTP_PORT}/health"
+}
+
+resolve_tag() {
+	if [[ "$ROLLBACK" == true ]]; then
+		local prev_file="${DEPLOY_STATE_DIR}/previous"
+		[[ -f "$prev_file" ]] || die "no previous deploy tag at $prev_file"
+		IMAGE_TAG="$(tr -d '[:space:]' <"$prev_file")"
+		log "rollback to tag: $IMAGE_TAG"
+		return
+	fi
+
+	if [[ -z "$IMAGE_TAG" ]]; then
+		die "IMAGE_TAG is not set (use --tag or set in $ENV_FILE)"
+	fi
+}
+
+registry_login() {
+	[[ -n "${REGISTRY_URL:-}" ]] || die "REGISTRY_URL is not set"
+	[[ -n "${REGISTRY_HOST:-}" ]] || REGISTRY_HOST="${REGISTRY_URL%%/*}"
+	if [[ -n "${REGISTRY_PASSWORD:-}" ]]; then
+		log "logging in to $REGISTRY_HOST"
+		echo "$REGISTRY_PASSWORD" | docker login "$REGISTRY_HOST" -u "${REGISTRY_USER:-}" --password-stdin
+	fi
+}
+
+pull_image() {
+	if [[ "$SKIP_PULL" == true ]]; then
+		log "skip pull"
+		return
+	fi
+	local image="${REGISTRY_URL}/bot:${IMAGE_TAG}"
+	log "pulling $image"
+	docker pull "$image"
+}
+
+compose_up() {
+	export IMAGE_TAG
+	local -a cmd=(docker compose -f "$COMPOSE_FILE" up -d --remove-orphans)
+	if [[ "$WITH_PROXY" == true ]]; then
+		cmd+=(--profile proxy)
+	fi
+	log "starting stack (tag=$IMAGE_TAG)"
+	"${cmd[@]}"
+}
+
+wait_healthy() {
+	log "waiting for healthy bot at $HEALTH_URL"
+	local attempts=30
+	for _ in $(seq 1 "$attempts"); do
+		if curl -fsS "$HEALTH_URL" >/dev/null 2>&1; then
+			log "health check passed"
+			curl -fsS "$HEALTH_URL"
+			echo
+			return 0
+		fi
+		if docker inspect --format='{{.State.Health.Status}}' "$CONTAINER_NAME" 2>/dev/null | grep -q healthy; then
+			log "docker health status: healthy"
+			return 0
+		fi
+		sleep 2
+	done
+	die "bot did not become healthy within $((attempts * 2))s"
+}
+
+save_deploy_state() {
+	mkdir -p "$DEPLOY_STATE_DIR"
+	local current_file="${DEPLOY_STATE_DIR}/current"
+	local previous_file="${DEPLOY_STATE_DIR}/previous"
+
+	if [[ -f "$current_file" ]] && [[ "$ROLLBACK" != true ]]; then
+		cp "$current_file" "$previous_file"
+	fi
+	echo "$IMAGE_TAG" >"$current_file"
+	log "saved deploy tag to ${current_file}"
+	if [[ -f "$previous_file" ]]; then
+		log "rollback tag available: $(tr -d '[:space:]' <"$previous_file")"
+	fi
+}
+
+show_status() {
+	docker compose -f "$COMPOSE_FILE" ps
+}
+
+main() {
+	parse_args "$@"
+	load_env
+	resolve_tag
+	registry_login
+	pull_image
+	compose_up
+	wait_healthy
+	save_deploy_state
+	show_status
+	log "deploy complete: ${REGISTRY_URL}/bot:${IMAGE_TAG}"
+}
+
+main "$@"

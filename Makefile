@@ -1,5 +1,5 @@
 .PHONY: dev dev-bot dev-api dev-ai lint lint-go lint-py test build build-bot build-docker \
-	push push-bot push-api push-ai migrate fmt help ci install-py tidy
+	push push-bot push-api push-ai deploy deploy-rollback deploy-check migrate fmt help ci install-py tidy
 
 PYTHON ?= python3
 PIP ?= $(PYTHON) -m pip
@@ -15,7 +15,7 @@ REGISTRY_HOST ?= $(firstword $(subst /, ,$(REGISTRY_URL)))
 BOT_IMAGE ?= anonimus/bot:local
 
 help:
-	@echo "Targets: dev-bot dev-api dev-ai lint test build build-docker push ci migrate fmt"
+	@echo "Targets: dev-bot dev-api dev-ai lint test build build-docker push ci deploy migrate fmt"
 
 # --- Dev ---
 
@@ -29,6 +29,18 @@ dev-api:
 
 dev-ai:
 	$(PYTHON) -m uvicorn ai.main:app --reload --host 0.0.0.0 --port 8001
+
+# --- Deploy (004+) ---
+
+deploy:
+	bash scripts/deploy.sh
+
+deploy-rollback:
+	bash scripts/deploy.sh --rollback
+
+deploy-check:
+	bash -n scripts/deploy.sh
+	bash scripts/deploy.sh --help >/dev/null
 
 # --- CI ---
 

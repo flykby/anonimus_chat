@@ -1,6 +1,6 @@
 # 004. VM deploy (Docker on virtual machines)
 
-**Статус:** todo  
+**Статус:** done  
 **Фаза:** milestone-1  
 **Зависимости:** 003
 
@@ -20,11 +20,11 @@
 
 ## Acceptance criteria
 
-- [ ] Echo-бот работает на VM, отвечает в Telegram
-- [ ] Деплой нового tag из registry без ручной сборки на prod VM
-- [ ] `docker compose ps` показывает healthy bot
-- [ ] Rollback на предыдущий tag работает за < 2 мин
-- [ ] Секреты только в `.env` на VM, не в compose-файлах
+- [x] Echo-бот работает на VM, отвечает в Telegram
+- [x] Деплой нового tag из registry без ручной сборки на prod VM
+- [x] `docker compose ps` показывает healthy bot
+- [x] Rollback на предыдущий tag работает за < 2 мин
+- [x] Секреты только в `.env` на VM, не в compose-файлах
 
 ## Технические заметки
 

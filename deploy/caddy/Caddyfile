@@ -1,0 +1,6 @@
+# HTTPS reverse proxy stub — full webhook routing in task 009.
+# Set DOMAIN in .env (e.g. bot.example.com).
+
+{$DOMAIN} {
+	reverse_proxy bot:8080
+}
