@@ -38,7 +38,9 @@ make compose-up
 make compose-down
 
 # Миграции (goose)
+make compose-up-infra
 make migrate-up
+make seed
 make migrate-status
 
 # CI / deploy

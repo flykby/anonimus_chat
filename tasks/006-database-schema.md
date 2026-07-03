@@ -1,6 +1,6 @@
 # 006. Database schema
 
-**Статус:** todo  
+**Статус:** done  
 **Фаза:** infra  
 **Зависимости:** 001, 005
 
@@ -27,11 +27,11 @@
 
 ## Acceptance criteria
 
-- [ ] Миграции применяются с нуля: `make migrate-up` (goose)
-- [ ] Все FK и constraints на месте
-- [ ] Enum-поля: gender (male|female), seeking, language (ru|en), nsfw_level (safe|adult), dialog type
-- [ ] Soft-delete users через `deleted_at`
-- [ ] Seed-скрипт для 1 тестовой персоны и 2–3 фото (опционально)
+- [x] Миграции применяются с нуля: `make migrate-up` (goose)
+- [x] Все FK и constraints на месте
+- [x] Enum-поля: gender (male|female), seeking, language (ru|en), nsfw_level (safe|adult), dialog type
+- [x] Soft-delete users через `deleted_at`
+- [x] Seed-скрипт для 1 тестовой персоны и 2–3 фото (опционально)
 
 ## Технические заметки
 

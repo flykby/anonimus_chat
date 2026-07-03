@@ -1,29 +1,40 @@
 # Database migrations (goose)
 
-SQL migrations for PostgreSQL. Applied via [goose](https://github.com/pressly/goose).
+SQL migrations for PostgreSQL with **pgvector**.
 
 ## Commands
 
 ```bash
-# Apply all pending migrations
+# Start postgres (pgvector image)
+make compose-up-infra
+
+# Apply migrations
 make migrate-up
 
-# Roll back last migration
-make migrate-down
+# Seed test persona + photos
+make seed
 
-# Show migration status
+# Status / rollback
 make migrate-status
-
-# Create new migration
-make migrate-create NAME=add_users
+make migrate-down
 ```
 
-Requires `DATABASE_URL` in environment, e.g.:
+`DATABASE_URL` example:
 
 ```
 postgresql://anonimus:anonimus@localhost:5432/anonimus?sslmode=disable
 ```
 
-Inside Docker Compose network use host `postgres` instead of `localhost`.
+Inside Docker Compose use host `postgres` instead of `localhost`.
 
-Real schema tables — task **006**.
+## Files
+
+| Migration | Description |
+|-----------|-------------|
+| `00001_extensions.sql` | `vector` extension (pgvector) |
+| `00002_schema.sql` | Core tables, enums, indexes |
+
+## Go layer
+
+- Models: `internal/shared/models.go`
+- DB pool: `internal/db/pool.go`

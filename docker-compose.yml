@@ -6,7 +6,7 @@ name: anonimus
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: anonimus-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-anonimus}

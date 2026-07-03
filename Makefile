@@ -1,7 +1,7 @@
 .PHONY: dev dev-bot dev-api dev-ai lint test build build-bot build-docker \
 	push push-bot push-api push-ai deploy deploy-rollback deploy-check \
 	compose-up compose-down compose-ps compose-logs compose-config \
-	migrate-up migrate-down migrate-status migrate-create tidy fmt help ci
+	migrate-up migrate-down migrate-status migrate-create seed tidy fmt help ci
 
 GO ?= go
 BIN_DIR := bin
@@ -167,6 +167,10 @@ migrate-create:
 	$(GOOSE) -dir migrations create $(NAME) sql
 
 migrate: migrate-up
+
+seed:
+	@test -n "$(DATABASE_URL)" || (echo "DATABASE_URL is required" && exit 1)
+	psql "$(DATABASE_URL)" -v ON_ERROR_STOP=1 -f scripts/seed.sql
 
 tidy:
 	$(GO) mod tidy

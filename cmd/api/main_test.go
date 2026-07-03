@@ -8,20 +8,9 @@ import (
 	"testing"
 )
 
-func TestHealthHandler(t *testing.T) {
-	t.Setenv("DATABASE_URL", "postgres://example")
-	t.Setenv("REDIS_URL", "redis://example")
-
+func TestHealthHandlerWithoutDB(t *testing.T) {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"status":              "ok",
-			"service":             "api",
-			"database_configured": os.Getenv("DATABASE_URL") != "",
-			"redis_configured":    os.Getenv("REDIS_URL") != "",
-		})
-	})
+	mux.HandleFunc("GET /health", healthHandler(nil))
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	rec := httptest.NewRecorder()
@@ -37,5 +26,31 @@ func TestHealthHandler(t *testing.T) {
 	}
 	if body["service"] != "api" {
 		t.Fatalf("service = %v", body["service"])
+	}
+	if body["database_ok"] != false {
+		t.Fatalf("database_ok = %v, want false", body["database_ok"])
+	}
+}
+
+func TestHealthHandlerConfiguredFlag(t *testing.T) {
+	t.Setenv("DATABASE_URL", "postgres://example")
+	t.Setenv("REDIS_URL", "redis://example")
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /health", healthHandler(nil))
+
+	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	var body map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("json: %v", err)
+	}
+	if body["database_configured"] != true {
+		t.Fatalf("database_configured = %v", body["database_configured"])
+	}
+	if os.Getenv("DATABASE_URL") == "" {
+		t.Fatal("expected DATABASE_URL in env")
 	}
 }
