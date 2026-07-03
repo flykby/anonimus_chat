@@ -6,39 +6,34 @@
 
 ## Описание
 
-Создать минимальную структуру монорепозитория, достаточную для echo-бота и CI. Полные сервисы api/ai — заготовки (stub), наполняются позже.
+Минимальная структура **Go monorepo**: bot, api, ai как отдельные `cmd/*`, общие пакеты в `internal/`.
 
 ## Scope
 
-- Директории: `bot/`, `api/`, `ai/`, `docker/`, `migrations/`, `shared/`, `tests/`
-- `.env.example`:
-  - `BOT_TOKEN`
-  - `DATABASE_URL`, `REDIS_URL` (для 005+)
-  - `RUNPOD_LLM_URL`, `RUNPOD_LLM_API_KEY` (для 036+)
-  - `RUNPOD_EMBEDDING_URL`, `RUNPOD_EMBEDDING_API_KEY`
-  - `REGISTRY_URL`, `WEBHOOK_URL`
-- `Makefile`: `dev`, `lint`, `test`, `build`, `migrate`
-- Python 3.12+, aiogram 3 (bot), FastAPI stubs (api, ai)
-- `.gitignore` для Python, Docker, `.env`
-- `README.md` в корне со ссылкой на `tasks/`
+- Директории: `cmd/bot`, `cmd/api`, `cmd/ai`, `internal/`, `migrations/`, `docker/`
+- Корневой `go.mod`, `Makefile`, `.env.example`
+- **Go 1.22+** для всех сервисов
+- Telegram SDK: [`go-telegram/bot`](https://github.com/go-telegram/bot) (bot)
+- Миграции: **goose** (`migrations/`, `make migrate-up`)
+- `.gitignore`, `README.md`
 
 ## Acceptance criteria
 
 - [x] Структура репозитория создана
-- [x] `make lint` и `make test` запускаются (даже если тестов пока мало)
-- [x] `bot/` имеет entrypoint, готовый к задаче 002
-- [x] `api/` и `ai/` отвечают `GET /health` → 200 (stub)
-- [x] `.env.example` документирует все переменные, включая RunPod и registry
+- [x] `make lint` и `make test` запускаются
+- [x] `cmd/bot`, `cmd/api`, `cmd/ai` — entrypoints с `/health`
+- [x] `.env.example` документирует переменные (RunPod, registry, DATABASE_URL)
+- [x] goose настроен (`migrations/`, `make migrate-up`)
 
 ## Технические заметки
 
-- **Деплой:** prod на VM в Docker-контейнерах; БД тоже в контейнере на VM (005, 004)
-- **Inference:** LLM и embeddings на RunPod, не на prod VM (036)
-- `bot/` — Telegram I/O; бизнес-логика позже через HTTP к `api/`
-- `shared/` — Pydantic-модели, enum'ы (Gender, Language, NsfwLevel)
+- Единый module path: `github.com/flykby/anonimus_chat`
+- `internal/shared/` — enum'ы и модели
+- `internal/platform/` — env, httputil
+- Контракты между сервисами — HTTP/JSON
 
 ## Out of scope
 
 - CI pipeline (003)
 - Echo-логика (002)
-- Реализация бизнес-логики api/ai
+- Реальная схема БД (006)

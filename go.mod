@@ -1,4 +1,4 @@
-module github.com/flykby/anonimus_chat/bot
+module github.com/flykby/anonimus_chat
 
 go 1.22
 

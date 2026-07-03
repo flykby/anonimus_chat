@@ -6,7 +6,7 @@
 
 ## Описание
 
-Спроектировать и применить схему PostgreSQL для пользователей, профилей, диалогов, персон, фото, премиума и событий. Основа для всей бизнес-логики.
+Спроектировать и применить схему PostgreSQL для пользователей, профилей, диалогов, персон, фото, премиума и событий. Миграции — **goose** (SQL-файлы в `migrations/`).
 
 ## Scope
 
@@ -21,12 +21,13 @@
   - `dialog_photos_sent` — dialog_id, photo_id, was_blurred, was_unlocked, sent_at
   - `events` — id, user_id, dialog_id, event_type, metadata (jsonb), created_at
   - `deletion_benefits` — telegram_id, free_unlock_used_at (антиабуз при удалении)
-- Alembic migrations; extension **pgvector** для embedding search (020, 036)
+- **goose** SQL migrations в `migrations/`; extension **pgvector**
 - Индексы: telegram_id, dialog user_id + ended_at, events by type + created_at
+- Go-модели / repository layer в `internal/api/` (pgx или database/sql)
 
 ## Acceptance criteria
 
-- [ ] Миграции применяются с нуля: `alembic upgrade head`
+- [ ] Миграции применяются с нуля: `make migrate-up` (goose)
 - [ ] Все FK и constraints на месте
 - [ ] Enum-поля: gender (male|female), seeking, language (ru|en), nsfw_level (safe|adult), dialog type
 - [ ] Soft-delete users через `deleted_at`
@@ -34,12 +35,12 @@
 
 ## Технические заметки
 
-- `public_uuid` — UUID v4, показывается пользователю в профиле
-- `telegram_file_id` — ссылка на файл в Telegram, не S3 в v1
-- `events.metadata` — гибкое хранение: persona_id, photo_id, reason, etc.
-- Не хранить полный контекст LLM в Postgres — только последние N сообщений или summary (Redis для hot context)
+- **goose:** `make migrate-create NAME=...`, файлы `migrations/00002_*.sql`
+- `DATABASE_URL` с `sslmode=disable` для dev compose
+- Enum'ы в Go: `internal/shared/enums.go` (Gender, Language, NsfwLevel)
+- Не хранить полный контекст LLM в Postgres — hot context в Redis
 
 ## Out of scope
 
 - ClickHouse / аналитическое хранилище
-- Шифрование at-rest (managed DB в проде)
+- Alembic / Python ORM

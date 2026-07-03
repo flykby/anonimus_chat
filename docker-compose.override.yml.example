@@ -1,15 +1,12 @@
-# Copy to docker-compose.override.yml for local dev hot-reload.
-# docker-compose.override.yml is gitignored.
+# Copy to docker-compose.override.yml for local dev tweaks.
+# Go services: use `make dev-api` / `make dev-ai` on host for fast iteration,
+# or `docker compose up --build` to rebuild images after changes.
 
 services:
   api:
-    volumes:
-      - ./api:/app/api:ro
-      - ./shared:/app/shared:ro
-    command: ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    environment:
+      LOG_LEVEL: debug
 
   ai:
-    volumes:
-      - ./ai:/app/ai:ro
-      - ./shared:/app/shared:ro
-    command: ["uvicorn", "ai.main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+    environment:
+      LOG_LEVEL: debug

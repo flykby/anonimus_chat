@@ -95,5 +95,5 @@ Adjust `WorkingDirectory` in the unit file if not using `/opt/anonimus_chat`.
 
 ## Next steps
 
-- **006** — database schema and Alembic migrations
+- **006** — database schema and goose migrations
 - **009** — webhook + HTTPS via Caddy

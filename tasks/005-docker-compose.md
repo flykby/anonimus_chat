@@ -6,37 +6,29 @@
 
 ## Описание
 
-Единый Docker Compose для dev и prod VM: PostgreSQL, Redis и контейнеры приложений. Postgres и Redis крутятся на той же виртуалке, что и bot/api/ai — без managed cloud DB.
+Docker Compose для dev и prod VM: PostgreSQL, Redis, **Go**-сервисы bot/api/ai.
 
 ## Scope
 
-- `docker-compose.yml` — базовый стек: postgres, redis, api, bot, ai
-- `docker-compose.prod.yml` — extends/overrides для prod VM (без dev mounts)
-- Volumes для персистентности Postgres и Redis (AOF optional)
-- Health checks: postgres, redis, bot, api, ai
-- `docker/*.Dockerfile` — multi-stage, slim images (сборка через 003)
-- Dev: hot-reload (volume mount + uvicorn --reload)
-- Internal network: сервисы обращаются друг к другу по имени
+- `docker-compose.yml` — postgres, redis, bot, api, ai (Go images, local build)
+- `docker-compose.prod.yml` — registry images, restart policies
+- Volumes, healthchecks, internal network
+- RunPod env → `ai` service
+- Dev override example (без uvicorn — сервисы на Go)
 
 ## Acceptance criteria
 
-- [x] `docker compose up` поднимает postgres + redis без ошибок
-- [x] API и AI stubs отвечают на `GET /health` → `200 OK`
-- [x] Данные Postgres сохраняются между перезапусками (named volume)
-- [x] Тот же compose (с prod override) работает на VM после pull из registry (004)
-- [x] RunPod URL'ы прокидываются в `ai` через env, не hardcode
+- [x] `docker compose up` поднимает postgres + redis
+- [x] API и AI отвечают `GET /health` → 200
+- [x] Postgres data persists (named volume)
+- [x] Prod compose merge работает с deploy.sh
+- [x] RunPod URL'ы в env `ai`, не hardcode
 
 ## Технические заметки
 
-- Postgres 16, Redis 7 — контейнеры на prod VM
-- `DATABASE_URL=postgresql://anonimus:anonimus@postgres:5432/anonimus`
-- `REDIS_URL=redis://redis:6379/0`
-- Dev webhook: ngrok / cloudflared → `WEBHOOK_URL`
-- `docker-compose.override.yml` для локальных настроек (не коммитить секреты)
-- GPU **не** нужен на VM — inference на RunPod
+- Dockerfiles: `docker/{bot,api,ai}.Dockerfile` — multi-stage Go build из корня
+- Healthchecks: `wget` на `/health`
 
 ## Out of scope
 
-- Kubernetes / swarm
-- Managed Postgres/Redis в облаке
-- Мониторинг — см. 035
+- Kubernetes

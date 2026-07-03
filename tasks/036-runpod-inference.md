@@ -16,7 +16,7 @@
   - `RUNPOD_EMBEDDING_URL` — embeddings endpoint
   - `RUNPOD_EMBEDDING_API_KEY`
   - `RUNPOD_REQUEST_TIMEOUT_SEC` (default 30)
-- `ai/clients/runpod.py`: async HTTP client (httpx), retry, timeout, structured errors
+- `internal/ai/runpod/client.go`: HTTP client (net/http), retry, timeout, structured errors
 - Health probe: `GET /health/runpod` — ping обоих endpoint'ов или degraded mode
 - Circuit breaker при серии 5xx / timeout
 - Логирование latency, token usage (если API отдаёт)

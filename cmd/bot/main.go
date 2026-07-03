@@ -12,8 +12,8 @@ import (
 
 	"github.com/go-telegram/bot"
 
-	"github.com/flykby/anonimus_chat/bot/internal/config"
-	"github.com/flykby/anonimus_chat/bot/internal/handlers"
+	"github.com/flykby/anonimus_chat/internal/bot/config"
+	"github.com/flykby/anonimus_chat/internal/bot/handlers"
 )
 
 func main() {

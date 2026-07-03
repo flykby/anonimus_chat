@@ -2,6 +2,15 @@
 
 Telegram-бот для анонимного общения и обмена фотографиями.
 
+## Стек
+
+| Компонент | Технология |
+|-----------|------------|
+| **bot, api, ai** | Go 1.22+ |
+| **Миграции БД** | [goose](https://github.com/pressly/goose) (SQL) |
+| **Postgres / Redis** | Docker на VM |
+| **Inference** | RunPod (HTTP) |
+
 ## Принципы деплоя
 
 - **Prod VM:** все runtime-сервисы (bot, api, ai, **postgres, redis**) — Docker-контейнеры на виртуалке
