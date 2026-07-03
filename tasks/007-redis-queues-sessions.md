@@ -15,7 +15,7 @@
 - **FSM state:** `fsm:{telegram_id}` — текущее состояние бота (TTL 24h)
 - **Rate limits:** `ratelimit:{user_id}:{action}` — счётчик с TTL (сообщения, поиск, фото)
 - **Dialog context (AI):** list `dialog_ctx:{dialog_id}` — последние N сообщений для LLM
-- Python-клиент: `redis.asyncio`, connection pool
+- **Go-клиент:** `github.com/redis/go-redis/v9` (bot FSM, api matchmaking)
 
 ## Acceptance criteria
 
