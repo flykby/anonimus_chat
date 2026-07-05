@@ -61,69 +61,71 @@ flowchart LR
 
 ### Option A — GitHub-hosted CI + SSH deploy (recommended)
 
-GitHub Actions builds and pushes images to a registry the VM can reach (**not** `127.0.0.1:5000` on the VM — GitHub runners cannot push there). Use **GHCR** or any registry with a reachable endpoint.
+GitHub Actions builds and pushes images to **GHCR**, then deploys on the VM over SSH.
 
-#### 1. Registry (example: GHCR)
+#### Checklist
 
-In GitHub → **Settings → Secrets and variables → Actions**, add:
+**A. GitHub repository secrets** (`Settings → Secrets and variables → Actions`):
 
-| Secret | Example |
-|--------|---------|
-| `REGISTRY_URL` | `ghcr.io/flykby/anonimus` |
-| `REGISTRY_USER` | your GitHub username |
-| `REGISTRY_PASSWORD` | GitHub PAT with `write:packages`, or `GITHUB_TOKEN` if packages are in the same org/repo |
+| Secret | Value | Required |
+|--------|-------|----------|
+| `REGISTRY_URL` | `ghcr.io/flykby/anonimus` | yes |
+| `REGISTRY_USER` | leave empty (CI uses `GITHUB_TOKEN`) | no |
+| `REGISTRY_PASSWORD` | leave empty for GHCR push from CI | no |
+| `DEPLOY_HOST` | VM public IP or hostname | yes |
+| `DEPLOY_USER` | SSH user, e.g. `root` | yes |
+| `DEPLOY_SSH_KEY` | private SSH key for deploy | yes |
 
-On the VM, point `.env` at the same registry and log in once:
+CI push to GHCR uses the built-in `GITHUB_TOKEN` (`packages: write` is set in the workflow).  
+Only `REGISTRY_URL` is required for the registry side in GitHub secrets.
 
-```bash
-# /opt/anonimus_chat/.env
-REGISTRY_URL=ghcr.io/flykby/anonimus
-IMAGE_TAG=latest   # deploy.sh uses --tag from CI; this is fallback only
+**B. SSH key for deploy**
 
-echo "$GITHUB_PAT" | docker login ghcr.io -u YOUR_GITHUB_USER --password-stdin
-```
-
-Make GHCR packages pullable from the VM (package visibility / org settings).
-
-Image tags pushed by CI: full SHA, short SHA (e.g. `2889586`), and `latest` on `main`.
-
-#### 2. SSH deploy secrets
-
-Generate a deploy key (on your laptop or VM):
+On your laptop:
 
 ```bash
 ssh-keygen -t ed25519 -f deploy_key -N ""
-# Add deploy_key.pub to VM: ~/.ssh/authorized_keys (for deploy user)
+ssh-copy-id -i deploy_key.pub root@YOUR_VM_IP   # or append deploy_key.pub to authorized_keys
 ```
 
-Add repository secrets:
+Copy private key to GitHub secret `DEPLOY_SSH_KEY`:
 
-| Secret | Value |
-|--------|-------|
-| `DEPLOY_HOST` | VM IP or hostname |
-| `DEPLOY_USER` | SSH user (e.g. `root` or dedicated `deploy`) |
-| `DEPLOY_SSH_KEY` | private key contents (`deploy_key`) |
+```bash
+cat deploy_key
+```
 
-#### 3. Flow after setup
+**C. VM one-time setup**
+
+```bash
+cd /opt/anonimus_chat
+git pull
+
+# Interactive: docker login ghcr.io + update .env
+GHCR_PAT=ghp_xxxx bash scripts/setup-vm-ghcr.sh
+# or: read -rsp prompt inside the script
+bash scripts/setup-vm-ghcr.sh
+```
+
+The VM needs a PAT with **`read:packages`** to pull private images.  
+After the first CI push, make packages visible: GitHub → Packages → each package → **Change visibility** (public is simplest for a solo project).
+
+**D. First automated deploy**
 
 ```bash
 git push origin main
 ```
 
-CI pushes `ghcr.io/.../bot:2889586` (short SHA), then SSH runs:
+Watch **Actions** tab: `Push to registry` → `Deploy to VM`.
 
-```bash
-cd /opt/anonimus_chat
-bash scripts/remote-deploy.sh 2889586
-```
+Image tags: full SHA, short SHA (e.g. `a4f2b6a`), and `latest` on `main`.
 
-Manual redeploy on VM (same as CI):
+#### Manual redeploy on VM
 
 ```bash
 bash scripts/remote-deploy.sh $(git rev-parse --short HEAD)
+# or:
+bash scripts/deploy.sh --tag latest
 ```
-
-Optional: create GitHub **Environment** `production` and add `environment: production` to the deploy job in `.github/workflows/ci.yml` for manual approval before deploy.
 
 ### Option B — Self-hosted runner (keep local registry `127.0.0.1:5000`)
 

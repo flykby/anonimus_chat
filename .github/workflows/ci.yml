@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  packages: write
+
 env:
   CI: "true"
 
@@ -74,12 +78,21 @@ jobs:
           REGISTRY_URL: ${{ secrets.REGISTRY_URL }}
           REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
           GIT_SHA: ${{ github.sha }}
           GIT_SHA_SHORT: ${{ steps.meta.outputs.short_sha }}
           GIT_BRANCH: main
         run: |
+          login_user="${REGISTRY_USER:-}"
+          login_password="${REGISTRY_PASSWORD:-}"
+          if [[ "$REGISTRY_URL" == ghcr.io/* ]]; then
+            login_user="${login_user:-${GITHUB_REPOSITORY_OWNER,,}}"
+            login_password="${login_password:-$GITHUB_TOKEN}"
+          fi
           REGISTRY_HOST="${REGISTRY_URL%%/*}"
-          echo "$REGISTRY_PASSWORD" | docker login "$REGISTRY_HOST" -u "$REGISTRY_USER" --password-stdin
+          echo "$login_password" | docker login "$REGISTRY_HOST" -u "$login_user" --password-stdin
           make push
 
       - name: Skip push (no registry secrets)

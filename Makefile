@@ -66,6 +66,7 @@ deploy-rollback:
 deploy-check:
 	bash -n scripts/deploy.sh
 	bash -n scripts/remote-deploy.sh
+	bash -n scripts/setup-vm-ghcr.sh
 	bash scripts/deploy.sh --help >/dev/null
 
 # --- CI ---
