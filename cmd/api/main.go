@@ -10,10 +10,12 @@ import (
 	"syscall"
 	"time"
 
+	goredis "github.com/redis/go-redis/v9"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/flykby/anonimus_chat/internal/db"
 	"github.com/flykby/anonimus_chat/internal/platform/env"
+	iredis "github.com/flykby/anonimus_chat/internal/redis"
 )
 
 func main() {
@@ -42,8 +44,21 @@ func main() {
 		}
 	}
 
+	var rdb *goredis.Client
+	redisURL := env.Get("REDIS_URL", "")
+	if redisURL != "" {
+		c, err := iredis.Open(ctx, redisURL)
+		if err != nil {
+			logger.Warn("redis unavailable at startup", "err", err)
+		} else {
+			rdb = c
+			logger.Info("redis connected")
+			defer rdb.Close()
+		}
+	}
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health", healthHandler(pool))
+	mux.HandleFunc("GET /health", healthHandler(pool, rdb))
 
 	srv := &http.Server{
 		Addr:              addr,
@@ -71,13 +86,19 @@ func main() {
 	logger.Info("api stopped")
 }
 
-func healthHandler(pool *pgxpool.Pool) http.HandlerFunc {
+func healthHandler(pool *pgxpool.Pool, rdb *goredis.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, _ *http.Request) {
+		pingCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
 		dbOK := false
 		if pool != nil {
-			pingCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-			defer cancel()
 			dbOK = db.Ping(pingCtx, pool) == nil
+		}
+
+		redisOK := false
+		if rdb != nil {
+			redisOK = iredis.Ping(pingCtx, rdb) == nil
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -88,6 +109,7 @@ func healthHandler(pool *pgxpool.Pool) http.HandlerFunc {
 			"database_configured": env.Set("DATABASE_URL"),
 			"database_ok":         dbOK,
 			"redis_configured":    env.Set("REDIS_URL"),
+			"redis_ok":            redisOK,
 		})
 	}
 }

@@ -10,7 +10,7 @@ import (
 
 func TestHealthHandlerWithoutDB(t *testing.T) {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health", healthHandler(nil))
+	mux.HandleFunc("GET /health", healthHandler(nil, nil))
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	rec := httptest.NewRecorder()
@@ -37,7 +37,7 @@ func TestHealthHandlerConfiguredFlag(t *testing.T) {
 	t.Setenv("REDIS_URL", "redis://example")
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health", healthHandler(nil))
+	mux.HandleFunc("GET /health", healthHandler(nil, nil))
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	rec := httptest.NewRecorder()
