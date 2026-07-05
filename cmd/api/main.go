@@ -15,6 +15,7 @@ import (
 
 	"github.com/flykby/anonimus_chat/internal/api/users"
 	"github.com/flykby/anonimus_chat/internal/db"
+	"github.com/flykby/anonimus_chat/internal/events"
 	"github.com/flykby/anonimus_chat/internal/platform/env"
 	iredis "github.com/flykby/anonimus_chat/internal/redis"
 )
@@ -61,7 +62,8 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", healthHandler(pool, rdb))
 	if pool != nil {
-		(&users.Handler{Users: db.NewUsersRepo(pool)}).RegisterRoutes(mux)
+		emitter := events.NewEmitter(logger)
+		(&users.Handler{Users: db.NewUsersRepo(pool, emitter)}).RegisterRoutes(mux)
 	}
 
 	srv := &http.Server{

@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/flykby/anonimus_chat/internal/events"
 	"github.com/flykby/anonimus_chat/internal/shared"
 )
 
@@ -21,11 +21,12 @@ type UserProfile struct {
 }
 
 type UsersRepo struct {
-	pool *pgxpool.Pool
+	pool   *pgxpool.Pool
+	events *events.Emitter
 }
 
-func NewUsersRepo(pool *pgxpool.Pool) *UsersRepo {
-	return &UsersRepo{pool: pool}
+func NewUsersRepo(pool *pgxpool.Pool, emitter *events.Emitter) *UsersRepo {
+	return &UsersRepo{pool: pool, events: emitter}
 }
 
 func (r *UsersRepo) GetByTelegramID(ctx context.Context, telegramID int64) (UserProfile, bool, error) {
@@ -134,22 +135,19 @@ func (r *UsersRepo) Register(ctx context.Context, in RegisterInput) (UserProfile
 		return UserProfile{}, fmt.Errorf("insert profile: %w", err)
 	}
 
-	meta, err := json.Marshal(map[string]any{
-		"telegram_id": in.TelegramID,
-		"age":         in.Age,
-		"gender":      in.Gender,
-		"seeking":     in.Seeking,
-		"language":    in.Language,
-	})
-	if err != nil {
-		return UserProfile{}, fmt.Errorf("marshal event metadata: %w", err)
-	}
-	_, err = tx.Exec(ctx, `
-		INSERT INTO events (user_id, event_type, metadata)
-		VALUES ($1, 'user.registered', $2::jsonb)
-	`, up.User.ID, string(meta))
-	if err != nil {
-		return UserProfile{}, fmt.Errorf("insert event: %w", err)
+	userID := up.User.ID
+	if err := r.events.Emit(ctx, tx, events.Input{
+		UserID: &userID,
+		Type:   events.TypeUserRegistered,
+		Metadata: events.UserRegisteredMeta{
+			TelegramID: in.TelegramID,
+			Age:        in.Age,
+			Gender:     string(in.Gender),
+			Seeking:    string(in.Seeking),
+			Language:   string(in.Language),
+		},
+	}); err != nil {
+		return UserProfile{}, fmt.Errorf("emit user.registered: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
