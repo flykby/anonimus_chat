@@ -108,13 +108,23 @@ jobs:
         id: cfg
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
-          if [[ -n "$DEPLOY_HOST" ]]; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          else
+          if [[ -z "$DEPLOY_HOST" ]]; then
             echo "enabled=false" >> "$GITHUB_OUTPUT"
             echo "DEPLOY_HOST secret not configured — deploy skipped"
+            exit 0
           fi
+          if [[ -z "$DEPLOY_USER" ]]; then
+            echo "::error::DEPLOY_USER secret is required when DEPLOY_HOST is set"
+            exit 1
+          fi
+          if [[ -z "$DEPLOY_SSH_KEY" ]]; then
+            echo "::error::DEPLOY_SSH_KEY secret is required when DEPLOY_HOST is set (private SSH key, full PEM contents)"
+            exit 1
+          fi
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
 
       - name: Require pushed images
         if: steps.cfg.outputs.enabled == 'true' && needs.push.outputs.pushed != 'true'
