@@ -74,7 +74,7 @@ func (r *UsersRepo) Register(ctx context.Context, in RegisterInput) (UserProfile
 	if err != nil {
 		return UserProfile{}, fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	var exists bool
 	if err := tx.QueryRow(ctx, `
