@@ -10,6 +10,9 @@ COMPOSE_PROD_FILE="${COMPOSE_PROD_FILE:-docker-compose.prod.yml}"
 ENV_FILE="${ENV_FILE:-.env}"
 DEPLOY_STATE_DIR="${DEPLOY_STATE_DIR:-.deploy}"
 CONTAINER_NAME="${CONTAINER_NAME:-anonimus-bot}"
+POSTGRES_CONTAINER="${POSTGRES_CONTAINER:-anonimus-postgres}"
+MIGRATION_SKIP=false
+MIGRATION_BEFORE=""
 IMAGE_TAG=""
 CLI_IMAGE_TAG=""
 ROLLBACK=false
@@ -27,13 +30,14 @@ die() {
 
 usage() {
 	cat <<EOF
-usage: $0 [--tag TAG] [--rollback] [--env-file PATH] [--with-proxy] [--skip-pull]
+usage: $0 [--tag TAG] [--rollback] [--env-file PATH] [--with-proxy] [--skip-pull] [--skip-migrate]
 
   --tag TAG        Deploy specific image tag (default: IMAGE_TAG from .env)
   --rollback       Deploy previous successful tag from ${DEPLOY_STATE_DIR}/previous
   --env-file PATH  Env file path (default: .env)
   --with-proxy     Start Caddy reverse proxy profile
   --skip-pull      Skip docker pull (use local image)
+  --skip-migrate   Skip goose migrations (emergency only)
 EOF
 }
 
@@ -58,6 +62,10 @@ parse_args() {
 			;;
 		--skip-pull)
 			SKIP_PULL=true
+			shift
+			;;
+		--skip-migrate)
+			MIGRATION_SKIP=true
 			shift
 			;;
 		-h | --help)
@@ -146,6 +154,76 @@ compose_up() {
 	"${cmd[@]}"
 }
 
+wait_postgres_healthy() {
+	log "waiting for healthy postgres ($POSTGRES_CONTAINER)"
+	local attempts=30
+	for _ in $(seq 1 "$attempts"); do
+		local status
+		status="$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$POSTGRES_CONTAINER" 2>/dev/null || echo "")"
+		if [[ "$status" == "healthy" ]]; then
+			log "postgres is healthy"
+			return 0
+		fi
+		sleep 2
+	done
+	die "postgres did not become healthy within $((attempts * 2))s"
+}
+
+run_migrations() {
+	if [[ "$MIGRATION_SKIP" == true ]]; then
+		log "skip migrations"
+		return 0
+	fi
+
+	if [[ "$ROLLBACK" == true ]]; then
+		local target_file="${DEPLOY_STATE_DIR}/migration_previous"
+		if [[ ! -f "$target_file" ]]; then
+			log "no migration rollback target (${target_file}) — skip"
+			return 0
+		fi
+		local target
+		target="$(tr -d '[:space:]' <"$target_file")"
+		[[ "$target" =~ ^[0-9]+$ ]] || die "invalid migration rollback target: $target"
+		local current
+		current="$(bash "$ROOT/scripts/migrate-prod.sh" --no-pull version)"
+		if [[ "$current" -le "$target" ]]; then
+			log "migrations already at version $current (rollback target $target)"
+			return 0
+		fi
+		log "rolling back migrations: $current -> $target"
+		bash "$ROOT/scripts/migrate-prod.sh" --no-pull down-to "$target"
+		return 0
+	fi
+
+	MIGRATION_BEFORE="$(bash "$ROOT/scripts/migrate-prod.sh" --no-pull version)"
+	log "applying migrations (current version=$MIGRATION_BEFORE)"
+	bash "$ROOT/scripts/migrate-prod.sh" --no-pull up
+	local after
+	after="$(bash "$ROOT/scripts/migrate-prod.sh" --no-pull version)"
+	log "migrations applied: $MIGRATION_BEFORE -> $after"
+}
+
+rollback_migrations_on_failure() {
+	if [[ "$MIGRATION_SKIP" == true || "$ROLLBACK" == true ]]; then
+		return 0
+	fi
+	if [[ -z "$MIGRATION_BEFORE" ]]; then
+		return 0
+	fi
+	local current
+	current="$(bash "$ROOT/scripts/migrate-prod.sh" --no-pull version 2>/dev/null || echo 0)"
+	if [[ "$current" -le "$MIGRATION_BEFORE" ]]; then
+		return 0
+	fi
+	log "deploy failed — rolling back migrations to version $MIGRATION_BEFORE"
+	bash "$ROOT/scripts/migrate-prod.sh" --no-pull down-to "$MIGRATION_BEFORE" || \
+		log "warning: migration rollback failed (check postgres manually)"
+}
+
+on_deploy_failure() {
+	rollback_migrations_on_failure
+}
+
 wait_healthy() {
 	log "waiting for healthy bot container ($CONTAINER_NAME)"
 	local attempts=30
@@ -166,6 +244,8 @@ save_deploy_state() {
 	mkdir -p "$DEPLOY_STATE_DIR"
 	local current_file="${DEPLOY_STATE_DIR}/current"
 	local previous_file="${DEPLOY_STATE_DIR}/previous"
+	local migration_current_file="${DEPLOY_STATE_DIR}/migration_current"
+	local migration_previous_file="${DEPLOY_STATE_DIR}/migration_previous"
 
 	if [[ -f "$current_file" ]] && [[ "$ROLLBACK" != true ]]; then
 		cp "$current_file" "$previous_file"
@@ -175,6 +255,28 @@ save_deploy_state() {
 	if [[ -f "$previous_file" ]]; then
 		log "rollback tag available: $(tr -d '[:space:]' <"$previous_file")"
 	fi
+
+	if [[ "$MIGRATION_SKIP" == true ]]; then
+		return 0
+	fi
+
+	if [[ "$ROLLBACK" == true ]]; then
+		if [[ -f "$migration_previous_file" ]]; then
+			local target
+			target="$(tr -d '[:space:]' <"$migration_previous_file")"
+			echo "$target" >"$migration_current_file"
+			log "migration version after rollback: $target"
+		fi
+		return 0
+	fi
+
+	if [[ -n "$MIGRATION_BEFORE" ]]; then
+		echo "$MIGRATION_BEFORE" >"$migration_previous_file"
+	fi
+	local migration_after
+	migration_after="$(bash "$ROOT/scripts/migrate-prod.sh" --no-pull version)"
+	echo "$migration_after" >"$migration_current_file"
+	log "saved migration version $migration_after (rollback target: $MIGRATION_BEFORE)"
 }
 
 show_status() {
@@ -188,8 +290,13 @@ main() {
 	registry_login
 	pull_images
 	cleanup_stale_endpoints
+	trap on_deploy_failure ERR
+	compose up -d postgres redis
+	wait_postgres_healthy
+	run_migrations
 	compose_up
 	wait_healthy
+	trap - ERR
 	save_deploy_state
 	show_status
 	log "deploy complete: ${REGISTRY_URL}/*:${IMAGE_TAG}"

@@ -143,7 +143,7 @@ bash scripts/deploy.sh --tag latest
 
 ## Rollback
 
-Rollback to the previous successful tag (< 2 min):
+Rollback to the previous successful tag (< 2 min). Also rolls back DB schema one step (`goose down-to`):
 
 ```bash
 bash scripts/deploy.sh --rollback
@@ -151,7 +151,8 @@ bash scripts/deploy.sh --rollback
 bash scripts/deploy.sh --tag <previous-sha>
 ```
 
-Previous tag is stored in `.deploy/previous` after each successful deploy.
+Previous tag is stored in `.deploy/previous` after each successful deploy.  
+Previous schema version — in `.deploy/migration_previous`.
 
 ## HTTPS reverse proxy (stub for task 009)
 
@@ -192,17 +193,27 @@ Adjust `WorkingDirectory` in the unit file if not using `/opt/anonimus_chat`.
 
 ## Database migrations (prod)
 
-Postgres is not exposed on the host in prod. Use the helper script (pulls `ghcr.io/kukymbr/goose-docker:3.27.1` — there is no official `pressly/goose` image):
+Migrations run **automatically** during `scripts/deploy.sh` (and CI deploy):
+
+1. Start postgres + redis
+2. `goose up` (or `goose down-to` on `--rollback`)
+3. Start/update app containers
+4. On deploy failure after migrate — auto rollback schema to pre-deploy version
+
+State files in `.deploy/`:
+
+| File | Purpose |
+|------|---------|
+| `migration_current` | Applied goose version after last successful deploy |
+| `migration_previous` | Version to restore on `--rollback` (one step, like image tags) |
+
+Manual commands (rarely needed):
 
 ```bash
-cd /opt/anonimus_chat
-git pull
-bash scripts/migrate-prod.sh          # up
 bash scripts/migrate-prod.sh status
-bash scripts/migrate-prod.sh down     # rollback one step
+bash scripts/migrate-prod.sh version
+bash scripts/deploy.sh --skip-migrate --tag latest   # emergency: deploy without migrate
 ```
-
-Requires `.env` with `POSTGRES_PASSWORD` (and running stack with postgres on `anonimus-prod_default`).
 
 ## Next steps
 
