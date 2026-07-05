@@ -91,7 +91,11 @@ ssh-copy-id -i deploy_key.pub root@YOUR_VM_IP   # or append deploy_key.pub to au
 Copy private key to GitHub secret `DEPLOY_SSH_KEY`:
 
 ```bash
-cat deploy_key   # NOT deploy_key.pub
+# Recommended: set secret from file (preserves newlines)
+gh secret set DEPLOY_SSH_KEY < deploy_key
+
+# Or copy manually — must be the PRIVATE key (not .pub):
+cat deploy_key
 ```
 
 The secret must include the full file:
@@ -102,7 +106,7 @@ The secret must include the full file:
 -----END OPENSSH PRIVATE KEY-----
 ```
 
-Do not wrap in quotes. If deploy still fails with "not a valid private key", delete the secret and paste again from `cat deploy_key`.
+Do not wrap in quotes. If deploy fails with "not a valid private key", delete the secret and run `gh secret set DEPLOY_SSH_KEY < deploy_key` again.
 
 **C. VM one-time setup**
 
