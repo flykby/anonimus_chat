@@ -89,9 +89,22 @@ Adjust `WorkingDirectory` in the unit file if not using `/opt/anonimus_chat`.
 | Problem | Check |
 |---------|-------|
 | `pull access denied` | `REGISTRY_USER` / `REGISTRY_PASSWORD`, `docker login` |
+| `address already in use` on postgres/redis | Prod stack does not bind postgres/redis to the host (see `docker-compose.prod.yml`). Run `docker compose -f docker-compose.yml -f docker-compose.prod.yml down --remove-orphans`, remove stale containers (`docker rm -f anonimus-postgres`), `git pull`, redeploy |
 | Bot unhealthy | `docker logs anonimus-bot`, verify `BOT_TOKEN` |
 | No Telegram reply | Bot uses long polling; VM needs outbound HTTPS to `api.telegram.org` |
 | Rollback missing | `.deploy/previous` exists only after ≥1 successful deploy |
+
+## Database migrations (prod)
+
+Postgres is not exposed on the host in prod. Run goose via the Docker network:
+
+```bash
+docker run --rm --network anonimus-prod_default \
+  -v /opt/anonimus_chat/migrations:/migrations \
+  ghcr.io/pressly/goose:latest \
+  -dir /migrations postgres \
+  "postgresql://anonimus:YOUR_PASSWORD@postgres:5432/anonimus?sslmode=disable" up
+```
 
 ## Next steps
 

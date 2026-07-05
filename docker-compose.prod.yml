@@ -6,13 +6,13 @@ name: anonimus-prod
 services:
   postgres:
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    # No host port — api connects via docker network (postgres:5432).
+    # Avoids conflicts with host PostgreSQL on 5432/5433.
+    ports: !reset null
 
   redis:
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    ports: !reset null
 
   api:
     image: ${REGISTRY_URL}/api:${IMAGE_TAG}
