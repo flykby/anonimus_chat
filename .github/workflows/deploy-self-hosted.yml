@@ -1,0 +1,65 @@
+# Optional: build, push to local registry, and deploy on the same VM.
+# Install a GitHub Actions self-hosted runner on the production VM, then enable
+# this workflow by setting repository variable DEPLOY_SELF_HOSTED=true.
+#
+# See docs/deploy.md — "Self-hosted runner (local registry)".
+
+name: Deploy on VM runner
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag to deploy (default: short git SHA)
+        required: false
+
+env:
+  CI: "true"
+
+jobs:
+  build-push-deploy:
+    name: Build, push, deploy
+    runs-on: self-hosted
+    if: vars.DEPLOY_SELF_HOSTED == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve image tag
+        id: tag
+        run: |
+          if [[ -n "${{ github.event.inputs.tag }}" ]]; then
+            echo "value=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Lint, test, build
+        run: |
+          make tidy
+          make lint
+          make test
+          make build-docker
+
+      - name: Push to local registry
+        env:
+          REGISTRY_URL: ${{ secrets.REGISTRY_URL }}
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          GIT_SHA: ${{ github.sha }}
+          GIT_SHA_SHORT: ${{ steps.tag.outputs.value }}
+          GIT_BRANCH: main
+        run: |
+          if [[ -z "${REGISTRY_URL}" ]]; then
+            echo "REGISTRY_URL secret is required for self-hosted deploy"
+            exit 1
+          fi
+          if [[ -n "${REGISTRY_PASSWORD:-}" ]]; then
+            REGISTRY_HOST="${REGISTRY_URL%%/*}"
+            echo "$REGISTRY_PASSWORD" | docker login "$REGISTRY_HOST" -u "${REGISTRY_USER:-}" --password-stdin
+          fi
+          make push
+
+      - name: Deploy stack
+        run: bash scripts/remote-deploy.sh "${{ steps.tag.outputs.value }}"
