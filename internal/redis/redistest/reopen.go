@@ -3,8 +3,8 @@ package redistest
 import (
 	"testing"
 
-	goredis "github.com/redis/go-redis/v9"
 	"github.com/alicebob/miniredis/v2"
+	goredis "github.com/redis/go-redis/v9"
 )
 
 func ReopenClient(t *testing.T, mr *miniredis.Miniredis) *goredis.Client {

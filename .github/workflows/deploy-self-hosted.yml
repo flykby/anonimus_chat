@@ -1,14 +1,12 @@
 # Optional: build, push to local registry, and deploy on the same VM.
-# Install a GitHub Actions self-hosted runner on the production VM, then enable
-# this workflow by setting repository variable DEPLOY_SELF_HOSTED=true.
+# Install a GitHub Actions self-hosted runner on the production VM, then run
+# manually from Actions tab (workflow_dispatch).
 #
 # See docs/deploy.md — "Self-hosted runner (local registry)".
 
 name: Deploy on VM runner
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       tag:
@@ -29,8 +27,9 @@ jobs:
       - name: Resolve image tag
         id: tag
         run: |
-          if [[ -n "${{ github.event.inputs.tag }}" ]]; then
-            echo "value=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          INPUT_TAG="${{ github.event.inputs.tag }}"
+          if [[ -n "$INPUT_TAG" ]]; then
+            echo "value=${INPUT_TAG}" >> "$GITHUB_OUTPUT"
           else
             echo "value=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           fi

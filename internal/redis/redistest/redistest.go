@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	goredis "github.com/redis/go-redis/v9"
 	"github.com/alicebob/miniredis/v2"
+	goredis "github.com/redis/go-redis/v9"
 )
 
 func NewTestClient(t *testing.T) (*miniredis.Miniredis, *goredis.Client) {

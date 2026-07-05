@@ -78,7 +78,7 @@ ci:
 
 lint:
 	$(GO) vet ./...
-	test -z "$$($(GO) fmt -l .)"
+	test -z "$$(gofmt -l .)"
 ifeq ($(CI),true)
 	golangci-lint run ./...
 endif
