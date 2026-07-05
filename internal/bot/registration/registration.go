@@ -36,7 +36,6 @@ const (
 	SeekingPrompt  = "Кого ты ищешь?"
 	LanguagePrompt = "Выбери язык интерфейса:"
 	UseButtonsHint = "Пожалуйста, выбери вариант кнопкой под сообщением."
-	MainMenuStub   = "Регистрация завершена! Главное меню скоро будет здесь."
 )
 
 func ParseAge(text string) (int16, error) {

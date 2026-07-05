@@ -9,6 +9,7 @@ import (
 	"github.com/go-telegram/bot/models"
 
 	"github.com/flykby/anonimus_chat/internal/bot/apiclient"
+	"github.com/flykby/anonimus_chat/internal/bot/menu"
 	"github.com/flykby/anonimus_chat/internal/bot/registration"
 	"github.com/flykby/anonimus_chat/internal/redis/fsm"
 	"github.com/flykby/anonimus_chat/internal/redis/regdraft"
@@ -23,7 +24,8 @@ type App struct {
 
 func (a *App) Register(b *bot.Bot) {
 	b.RegisterHandler(bot.HandlerTypeMessageText, "/start", bot.MatchTypeExact, a.start)
-	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "reg:", bot.MatchTypePrefix, a.onCallback)
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "reg:", bot.MatchTypePrefix, a.onRegCallback)
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "menu:", bot.MatchTypePrefix, a.onMenuCallback)
 }
 
 func (a *App) Default(ctx context.Context, b *bot.Bot, update *models.Update) {
@@ -40,38 +42,23 @@ func (a *App) Default(ctx context.Context, b *bot.Bot, update *models.Update) {
 		a.Logger.Error("fsm get failed", "err", err, "user_id", telegramID)
 		return
 	}
-	if !ok {
+	if ok {
+		a.handleRegistrationMessage(ctx, b, update, state)
 		return
 	}
 
-	if state != registration.StateAge {
-		a.sendText(ctx, b, update.Message.Chat.ID, registration.UseButtonsHint)
-		a.resumeRegistration(ctx, b, update.Message.Chat.ID, telegramID, state)
-		return
-	}
-
-	text := update.Message.Text
-	if registration.IsTooYoung(text) {
-		a.sendText(ctx, b, update.Message.Chat.ID, registration.AgeTooYoung)
-		return
-	}
-
-	age, err := registration.ParseAge(text)
+	profile, registered, err := a.API.GetByTelegramID(ctx, telegramID)
 	if err != nil {
-		a.sendText(ctx, b, update.Message.Chat.ID, registration.AgeInvalid)
+		a.Logger.Error("check registration failed", "err", err, "user_id", telegramID)
+		a.sendText(ctx, b, update.Message.Chat.ID, "Сервис временно недоступен. Попробуй позже.")
+		return
+	}
+	if !registered {
+		a.sendWelcome(ctx, b, update.Message.Chat.ID)
 		return
 	}
 
-	if err := a.Draft.SetAge(ctx, telegramID, age); err != nil {
-		a.Logger.Error("save age failed", "err", err, "user_id", telegramID)
-		return
-	}
-	if err := a.FSM.Set(ctx, telegramID, registration.StateGender); err != nil {
-		a.Logger.Error("fsm set failed", "err", err, "user_id", telegramID)
-		return
-	}
-
-	a.sendGenderQuestion(ctx, b, update.Message.Chat.ID)
+	a.handleRegisteredMessage(ctx, b, update, profile)
 }
 
 func (a *App) start(ctx context.Context, b *bot.Bot, update *models.Update) {
@@ -81,14 +68,14 @@ func (a *App) start(ctx context.Context, b *bot.Bot, update *models.Update) {
 	telegramID := update.Message.From.ID
 	a.Logger.Info("telegram update", "action", "start", "user_id", telegramID)
 
-	registered, err := a.isRegistered(ctx, telegramID)
+	profile, registered, err := a.API.GetByTelegramID(ctx, telegramID)
 	if err != nil {
 		a.Logger.Error("check registration failed", "err", err, "user_id", telegramID)
 		a.sendText(ctx, b, update.Message.Chat.ID, "Сервис временно недоступен. Попробуй позже.")
 		return
 	}
 	if registered {
-		a.sendText(ctx, b, update.Message.Chat.ID, registration.MainMenuStub)
+		a.showMainMenu(ctx, b, update.Message.Chat.ID, profile)
 		return
 	}
 
@@ -105,7 +92,7 @@ func (a *App) start(ctx context.Context, b *bot.Bot, update *models.Update) {
 	a.sendWelcome(ctx, b, update.Message.Chat.ID)
 }
 
-func (a *App) onCallback(ctx context.Context, b *bot.Bot, update *models.Update) {
+func (a *App) onRegCallback(ctx context.Context, b *bot.Bot, update *models.Update) {
 	if update.CallbackQuery == nil {
 		return
 	}
@@ -140,14 +127,48 @@ func (a *App) onCallback(ctx context.Context, b *bot.Bot, update *models.Update)
 	}
 }
 
+func (a *App) handleRegistrationMessage(ctx context.Context, b *bot.Bot, update *models.Update, state string) {
+	telegramID := update.Message.From.ID
+	chatID := update.Message.Chat.ID
+
+	if state != registration.StateAge {
+		a.sendText(ctx, b, chatID, registration.UseButtonsHint)
+		a.resumeRegistration(ctx, b, chatID, telegramID, state)
+		return
+	}
+
+	text := update.Message.Text
+	if registration.IsTooYoung(text) {
+		a.sendText(ctx, b, chatID, registration.AgeTooYoung)
+		return
+	}
+
+	age, err := registration.ParseAge(text)
+	if err != nil {
+		a.sendText(ctx, b, chatID, registration.AgeInvalid)
+		return
+	}
+
+	if err := a.Draft.SetAge(ctx, telegramID, age); err != nil {
+		a.Logger.Error("save age failed", "err", err, "user_id", telegramID)
+		return
+	}
+	if err := a.FSM.Set(ctx, telegramID, registration.StateGender); err != nil {
+		a.Logger.Error("fsm set failed", "err", err, "user_id", telegramID)
+		return
+	}
+
+	a.sendGenderQuestion(ctx, b, chatID)
+}
+
 func (a *App) beginRegistration(ctx context.Context, b *bot.Bot, telegramID, chatID int64) {
-	registered, err := a.isRegistered(ctx, telegramID)
+	profile, registered, err := a.API.GetByTelegramID(ctx, telegramID)
 	if err != nil {
 		a.Logger.Error("check registration failed", "err", err, "user_id", telegramID)
 		return
 	}
 	if registered {
-		a.sendText(ctx, b, chatID, registration.MainMenuStub)
+		a.showMainMenu(ctx, b, chatID, profile)
 		return
 	}
 
@@ -156,7 +177,7 @@ func (a *App) beginRegistration(ctx context.Context, b *bot.Bot, telegramID, cha
 		a.Logger.Error("fsm set failed", "err", err, "user_id", telegramID)
 		return
 	}
-	a.sendText(ctx, b, chatID, registration.AgePrompt)
+	a.sendReply(ctx, b, chatID, registration.AgePrompt, menu.RemoveKeyboard())
 }
 
 func (a *App) handleGender(ctx context.Context, b *bot.Bot, telegramID, chatID int64, data string) {
@@ -228,7 +249,7 @@ func (a *App) confirmRegistration(ctx context.Context, b *bot.Bot, telegramID, c
 		return
 	}
 
-	_, err = a.API.Register(ctx, apiclient.RegisterRequest{
+	profile, err := a.API.Register(ctx, apiclient.RegisterRequest{
 		TelegramID: telegramID,
 		Age:        draft.Age,
 		Gender:     string(draft.Gender),
@@ -243,7 +264,7 @@ func (a *App) confirmRegistration(ctx context.Context, b *bot.Bot, telegramID, c
 
 	_ = a.FSM.Delete(ctx, telegramID)
 	_ = a.Draft.Delete(ctx, telegramID)
-	a.sendText(ctx, b, chatID, registration.MainMenuStub)
+	a.showMainMenu(ctx, b, chatID, profile)
 }
 
 func (a *App) restartRegistration(ctx context.Context, b *bot.Bot, telegramID, chatID int64) {
@@ -255,7 +276,7 @@ func (a *App) restartRegistration(ctx context.Context, b *bot.Bot, telegramID, c
 func (a *App) resumeRegistration(ctx context.Context, b *bot.Bot, chatID, telegramID int64, state string) {
 	switch state {
 	case registration.StateAge:
-		a.sendText(ctx, b, chatID, registration.AgePrompt)
+		a.sendReply(ctx, b, chatID, registration.AgePrompt, menu.RemoveKeyboard())
 	case registration.StateGender:
 		a.sendGenderQuestion(ctx, b, chatID)
 	case registration.StateSeeking:
@@ -285,13 +306,9 @@ func (a *App) requireState(ctx context.Context, b *bot.Bot, chatID, telegramID i
 	return true
 }
 
-func (a *App) isRegistered(ctx context.Context, telegramID int64) (bool, error) {
-	_, ok, err := a.API.GetByTelegramID(ctx, telegramID)
-	return ok, err
-}
-
 func (a *App) sendWelcome(ctx context.Context, b *bot.Bot, chatID int64) {
-	a.sendInline(ctx, b, chatID, registration.WelcomeText, [][]models.InlineKeyboardButton{
+	a.sendReply(ctx, b, chatID, registration.WelcomeText, menu.RemoveKeyboard())
+	a.sendInline(ctx, b, chatID, "👇", [][]models.InlineKeyboardButton{
 		{{Text: "Заполнить анкету", CallbackData: registration.CBStart}},
 	})
 }

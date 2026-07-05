@@ -61,6 +61,19 @@ func (r *UsersRepo) GetByTelegramID(ctx context.Context, telegramID int64) (User
 	return up, true, nil
 }
 
+func (r *UsersRepo) HasActiveDialog(ctx context.Context, userID int64) (bool, error) {
+	var exists bool
+	err := r.pool.QueryRow(ctx, `
+		SELECT EXISTS(
+			SELECT 1 FROM dialogs WHERE user_id = $1 AND ended_at IS NULL
+		)
+	`, userID).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("has active dialog: %w", err)
+	}
+	return exists, nil
+}
+
 type RegisterInput struct {
 	TelegramID int64
 	Age        int16
