@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	goredis "github.com/redis/go-redis/v9"
 
+	"github.com/flykby/anonimus_chat/internal/api/users"
 	"github.com/flykby/anonimus_chat/internal/db"
 	"github.com/flykby/anonimus_chat/internal/platform/env"
 	iredis "github.com/flykby/anonimus_chat/internal/redis"
@@ -59,6 +60,9 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", healthHandler(pool, rdb))
+	if pool != nil {
+		(&users.Handler{Users: db.NewUsersRepo(pool)}).RegisterRoutes(mux)
+	}
 
 	srv := &http.Server{
 		Addr:              addr,

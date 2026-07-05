@@ -15,6 +15,8 @@ func TestValidateRequiresBotToken(t *testing.T) {
 	}
 
 	cfg.BotToken = "123:ABC"
+	cfg.APIURL = "http://api:8000"
+	cfg.RedisURL = "redis://localhost:6379/0"
 	if err := cfg.Validate(); err != nil {
 		t.Fatalf("Validate() = %v, want nil", err)
 	}

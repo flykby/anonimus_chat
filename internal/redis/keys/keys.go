@@ -20,6 +20,10 @@ func FSM(telegramID int64) string {
 	return fmt.Sprintf("%s:fsm:%d", Prefix, telegramID)
 }
 
+func RegDraft(telegramID int64) string {
+	return fmt.Sprintf("%s:regdraft:%d", Prefix, telegramID)
+}
+
 func RateLimit(userID int64, action string) string {
 	return fmt.Sprintf("%s:ratelimit:%d:%s", Prefix, userID, action)
 }

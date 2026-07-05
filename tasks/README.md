@@ -84,7 +84,7 @@ flowchart TD
 | # | Задача | Статус |
 |---|--------|--------|
 | 009 | [Telegram bot webhook](009-telegram-bot-webhook.md) | todo |
-| 010 | [Registration FSM](010-registration-fsm.md) | todo |
+| 010 | [Registration FSM](010-registration-fsm.md) | done |
 | 011 | [Main menu](011-main-menu.md) | todo |
 | 012 | [i18n RU/EN](012-i18n-ru-en.md) | todo |
 

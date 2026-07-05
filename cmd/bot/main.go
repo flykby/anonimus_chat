@@ -12,8 +12,12 @@ import (
 
 	"github.com/go-telegram/bot"
 
+	"github.com/flykby/anonimus_chat/internal/bot/apiclient"
 	"github.com/flykby/anonimus_chat/internal/bot/config"
 	"github.com/flykby/anonimus_chat/internal/bot/handlers"
+	iredis "github.com/flykby/anonimus_chat/internal/redis"
+	"github.com/flykby/anonimus_chat/internal/redis/fsm"
+	"github.com/flykby/anonimus_chat/internal/redis/regdraft"
 )
 
 func main() {
@@ -74,13 +78,26 @@ func shutdownHealthServer(logger *slog.Logger, srv *http.Server) {
 }
 
 func runTelegramBot(ctx context.Context, logger *slog.Logger, cfg config.Config) {
-	echo := &handlers.Echo{Logger: logger}
-	tg, err := bot.New(cfg.BotToken, bot.WithDefaultHandler(echo.Default))
+	rdb, err := iredis.Open(ctx, cfg.RedisURL)
+	if err != nil {
+		logger.Error("redis unavailable", "err", err)
+		os.Exit(1)
+	}
+	defer rdb.Close()
+
+	app := &handlers.App{
+		Logger: logger,
+		FSM:    fsm.New(rdb),
+		Draft:  regdraft.New(rdb),
+		API:    apiclient.NewClient(cfg.APIURL),
+	}
+
+	tg, err := bot.New(cfg.BotToken, bot.WithDefaultHandler(app.Default))
 	if err != nil {
 		logger.Error("failed to create telegram bot", "err", err)
 		os.Exit(1)
 	}
-	echo.Register(tg)
+	app.Register(tg)
 
 	if _, err := tg.GetMe(ctx); err != nil {
 		logger.Error("invalid BOT_TOKEN or Telegram API unavailable", "err", err)
@@ -92,7 +109,7 @@ func runTelegramBot(ctx context.Context, logger *slog.Logger, cfg config.Config)
 		tg.Start(ctx)
 	}()
 
-	logger.Info("echo bot ready", "mode", "long_polling")
+	logger.Info("bot ready", "mode", "long_polling")
 	<-ctx.Done()
 }
 
