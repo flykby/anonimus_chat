@@ -10,7 +10,6 @@ COMPOSE_PROD_FILE="${COMPOSE_PROD_FILE:-docker-compose.prod.yml}"
 ENV_FILE="${ENV_FILE:-.env}"
 DEPLOY_STATE_DIR="${DEPLOY_STATE_DIR:-.deploy}"
 CONTAINER_NAME="${CONTAINER_NAME:-anonimus-bot}"
-HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:${BOT_HTTP_PORT:-8080}/health}"
 IMAGE_TAG=""
 CLI_IMAGE_TAG=""
 ROLLBACK=false
@@ -83,8 +82,19 @@ load_env() {
 	fi
 	export ENV_FILE
 	export IMAGE_TAG
-	export BOT_HTTP_PORT="${BOT_HTTP_PORT:-8080}"
-	HEALTH_URL="http://127.0.0.1:${BOT_HTTP_PORT}/health"
+}
+
+cleanup_stale_endpoints() {
+	log "cleaning stale container endpoints"
+	local -a names=(anonimus-postgres anonimus-redis anonimus-api anonimus-ai anonimus-bot)
+	for name in "${names[@]}"; do
+		local state
+		state=$(docker inspect -f '{{.State.Status}}' "$name" 2>/dev/null || continue)
+		if [[ "$state" == "created" ]]; then
+			log "removing $name (state=created)"
+			docker rm -f "$name" >/dev/null 2>&1 || true
+		fi
+	done
 }
 
 resolve_tag() {
@@ -137,17 +147,14 @@ compose_up() {
 }
 
 wait_healthy() {
-	log "waiting for healthy bot at $HEALTH_URL"
+	log "waiting for healthy bot container ($CONTAINER_NAME)"
 	local attempts=30
 	for _ in $(seq 1 "$attempts"); do
-		if curl -fsS "$HEALTH_URL" >/dev/null 2>&1; then
+		local status
+		status="$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$CONTAINER_NAME" 2>/dev/null || echo "")"
+		if [[ "$status" == "healthy" ]]; then
 			log "health check passed"
-			curl -fsS "$HEALTH_URL"
-			echo
-			return 0
-		fi
-		if docker inspect --format='{{.State.Health.Status}}' "$CONTAINER_NAME" 2>/dev/null | grep -q healthy; then
-			log "docker health status: healthy"
+			compose exec -T bot wget -qO- http://127.0.0.1:8080/health 2>/dev/null || true
 			return 0
 		fi
 		sleep 2
@@ -180,6 +187,7 @@ main() {
 	resolve_tag
 	registry_login
 	pull_images
+	cleanup_stale_endpoints
 	compose_up
 	wait_healthy
 	save_deploy_state
