@@ -192,15 +192,17 @@ Adjust `WorkingDirectory` in the unit file if not using `/opt/anonimus_chat`.
 
 ## Database migrations (prod)
 
-Postgres is not exposed on the host in prod. Run goose via the Docker network:
+Postgres is not exposed on the host in prod. Use the helper script (pulls `ghcr.io/kukymbr/goose-docker:3.27.1` — there is no official `pressly/goose` image):
 
 ```bash
-docker run --rm --network anonimus-prod_default \
-  -v /opt/anonimus_chat/migrations:/migrations \
-  ghcr.io/pressly/goose:latest \
-  -dir /migrations postgres \
-  "postgresql://anonimus:YOUR_PASSWORD@postgres:5432/anonimus?sslmode=disable" up
+cd /opt/anonimus_chat
+git pull
+bash scripts/migrate-prod.sh          # up
+bash scripts/migrate-prod.sh status
+bash scripts/migrate-prod.sh down     # rollback one step
 ```
+
+Requires `.env` with `POSTGRES_PASSWORD` (and running stack with postgres on `anonimus-prod_default`).
 
 ## Next steps
 

@@ -67,6 +67,7 @@ deploy-check:
 	bash -n scripts/deploy.sh
 	bash -n scripts/remote-deploy.sh
 	bash -n scripts/setup-vm-ghcr.sh
+	bash -n scripts/migrate-prod.sh
 	bash scripts/deploy.sh --help >/dev/null
 
 # --- CI ---
@@ -169,6 +170,12 @@ migrate-create:
 	$(GOOSE) -dir migrations create $(NAME) sql
 
 migrate: migrate-up
+
+migrate-prod:
+	bash scripts/migrate-prod.sh
+
+migrate-prod-status:
+	bash scripts/migrate-prod.sh status
 
 seed:
 	@test -n "$(DATABASE_URL)" || (echo "DATABASE_URL is required" && exit 1)
