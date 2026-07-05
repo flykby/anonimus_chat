@@ -40,3 +40,7 @@ docker-compose.override.yml
 # Logs & temp
 *.log
 tmp/
+
+# Deploy keys (never commit)
+deploy_key
+deploy_key.pub

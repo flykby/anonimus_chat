@@ -124,6 +124,15 @@ jobs:
             echo "::error::DEPLOY_SSH_KEY secret is required when DEPLOY_HOST is set (private SSH key, full PEM contents)"
             exit 1
           fi
+          KEY_FILE="$(mktemp)"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          if ! ssh-keygen -y -f "$KEY_FILE" >/dev/null 2>&1; then
+            rm -f "$KEY_FILE"
+            echo "::error::DEPLOY_SSH_KEY is not a valid private key. Paste the full deploy_key file (not .pub), including BEGIN/END lines."
+            exit 1
+          fi
+          rm -f "$KEY_FILE"
           echo "enabled=true" >> "$GITHUB_OUTPUT"
 
       - name: Require pushed images
@@ -134,13 +143,20 @@ jobs:
 
       - name: Deploy via SSH
         if: steps.cfg.outputs.enabled == 'true' && needs.push.outputs.pushed == 'true'
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          command_timeout: 10m
-          script: |
-            set -euo pipefail
-            cd /opt/anonimus_chat
-            bash scripts/remote-deploy.sh "${{ needs.push.outputs.image_tag }}"
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          IMAGE_TAG: ${{ needs.push.outputs.image_tag }}
+        run: |
+          set -euo pipefail
+          KEY_FILE="$RUNNER_TEMP/deploy_key"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh -i "$KEY_FILE" -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "set -euo pipefail; cd /opt/anonimus_chat && bash scripts/remote-deploy.sh '${IMAGE_TAG}'"
+          rm -f "$KEY_FILE"
