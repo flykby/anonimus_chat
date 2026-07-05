@@ -23,11 +23,12 @@ type registerRequest struct {
 }
 
 type profileResponse struct {
-	TelegramID int64  `json:"telegram_id"`
-	Age        int16  `json:"age"`
-	Gender     string `json:"gender"`
-	Seeking    string `json:"seeking"`
-	Language   string `json:"language"`
+	TelegramID   int64  `json:"telegram_id"`
+	Age          int16  `json:"age"`
+	Gender       string `json:"gender"`
+	Seeking      string `json:"seeking"`
+	Language     string `json:"language"`
+	ActiveDialog bool   `json:"active_dialog"`
 }
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
@@ -52,7 +53,13 @@ func (h *Handler) getByTelegram(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, toProfileResponse(up))
+	activeDialog, err := h.Users.HasActiveDialog(r.Context(), up.User.ID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toProfileResponse(up, activeDialog))
 }
 
 func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
@@ -102,16 +109,17 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, toProfileResponse(up))
+	writeJSON(w, http.StatusCreated, toProfileResponse(up, false))
 }
 
-func toProfileResponse(up db.UserProfile) profileResponse {
+func toProfileResponse(up db.UserProfile, activeDialog bool) profileResponse {
 	return profileResponse{
-		TelegramID: up.User.TelegramID,
-		Age:        up.Profile.Age,
-		Gender:     string(up.Profile.Gender),
-		Seeking:    string(up.Profile.Seeking),
-		Language:   string(up.Profile.Language),
+		TelegramID:   up.User.TelegramID,
+		Age:          up.Profile.Age,
+		Gender:       string(up.Profile.Gender),
+		Seeking:      string(up.Profile.Seeking),
+		Language:     string(up.Profile.Language),
+		ActiveDialog: activeDialog,
 	}
 }
 

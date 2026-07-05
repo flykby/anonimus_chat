@@ -20,11 +20,12 @@ type Client struct {
 }
 
 type Profile struct {
-	TelegramID int64  `json:"telegram_id"`
-	Age        int16  `json:"age"`
-	Gender     string `json:"gender"`
-	Seeking    string `json:"seeking"`
-	Language   string `json:"language"`
+	TelegramID   int64  `json:"telegram_id"`
+	Age          int16  `json:"age"`
+	Gender       string `json:"gender"`
+	Seeking      string `json:"seeking"`
+	Language     string `json:"language"`
+	ActiveDialog bool   `json:"active_dialog"`
 }
 
 type RegisterRequest struct {
