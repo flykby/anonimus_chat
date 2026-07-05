@@ -26,8 +26,10 @@ Verify:
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
 curl http://127.0.0.1:8080/health
-curl http://127.0.0.1:8000/health
-curl http://127.0.0.1:8001/health
+
+# api/ai are internal-only in prod; check via docker network:
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec api wget -qO- http://127.0.0.1:8000/health
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec ai wget -qO- http://127.0.0.1:8001/health
 ```
 
 ## Deploy new version
@@ -89,7 +91,7 @@ Adjust `WorkingDirectory` in the unit file if not using `/opt/anonimus_chat`.
 | Problem | Check |
 |---------|-------|
 | `pull access denied` | `REGISTRY_USER` / `REGISTRY_PASSWORD`, `docker login` |
-| `address already in use` on postgres/redis | Prod stack does not bind postgres/redis to the host (see `docker-compose.prod.yml`). Run `docker compose -f docker-compose.yml -f docker-compose.prod.yml down --remove-orphans`, remove stale containers (`docker rm -f anonimus-postgres`), `git pull`, redeploy |
+| `address already in use` | Prod exposes only bot `:8080` on the host; postgres/redis/api/ai stay on the docker network. Stale endpoints often survive `ss` — run `docker compose -f docker-compose.yml -f docker-compose.prod.yml down --remove-orphans`, then `docker rm -f anonimus-postgres anonimus-redis anonimus-api anonimus-ai anonimus-bot 2>/dev/null`, `git pull`, redeploy. If it persists: `systemctl restart docker` |
 | Bot unhealthy | `docker logs anonimus-bot`, verify `BOT_TOKEN` |
 | No Telegram reply | Bot uses long polling; VM needs outbound HTTPS to `api.telegram.org` |
 | Rollback missing | `.deploy/previous` exists only after ≥1 successful deploy |
