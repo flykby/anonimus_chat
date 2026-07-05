@@ -127,18 +127,6 @@ bash scripts/remote-deploy.sh $(git rev-parse --short HEAD)
 bash scripts/deploy.sh --tag latest
 ```
 
-### Option B — Self-hosted runner (keep local registry `127.0.0.1:5000`)
-
-If you want CI to build on the VM and push to `127.0.0.1:5000`:
-
-1. Install a [GitHub Actions self-hosted runner](https://docs.github.com/en/actions/hosting-your-own-runners) on the VM.
-2. Set repository **variable** `DEPLOY_SELF_HOSTED=true`.
-3. Keep secrets `REGISTRY_URL=127.0.0.1:5000/anonimus` (and login if needed).
-
-Workflow: `.github/workflows/deploy-self-hosted.yml` — lint, test, build, push, deploy on the same machine.
-
-Leave `DEPLOY_HOST` unset so the SSH deploy job in `ci.yml` is skipped.
-
 ## Rollback
 
 Rollback to the previous successful tag (< 2 min):
