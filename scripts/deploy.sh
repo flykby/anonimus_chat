@@ -232,7 +232,11 @@ wait_healthy() {
 		status="$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$CONTAINER_NAME" 2>/dev/null || echo "")"
 		if [[ "$status" == "healthy" ]]; then
 			log "health check passed"
-			compose exec -T bot wget -qO- http://127.0.0.1:8080/health 2>/dev/null || true
+			if [[ -n "${WEBHOOK_URL:-}" ]]; then
+				compose exec -T bot wget -qO- --no-check-certificate https://127.0.0.1:8080/health 2>/dev/null || true
+			else
+				compose exec -T bot wget -qO- http://127.0.0.1:8080/health 2>/dev/null || true
+			fi
 			return 0
 		fi
 		sleep 2

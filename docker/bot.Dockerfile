@@ -13,9 +13,10 @@ RUN apk add --no-cache ca-certificates wget \
     && chown nobody:nobody /app/certs
 COPY --from=builder /bot /usr/local/bin/bot
 COPY docker/bot-entrypoint.sh /usr/local/bin/bot-entrypoint.sh
-RUN chmod +x /usr/local/bin/bot-entrypoint.sh
+COPY docker/bot-healthcheck.sh /usr/local/bin/bot-healthcheck.sh
+RUN chmod +x /usr/local/bin/bot-entrypoint.sh /usr/local/bin/bot-healthcheck.sh
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget -qO- --no-check-certificate https://127.0.0.1:8080/health 2>/dev/null || wget -qO- http://127.0.0.1:8080/health
+  CMD /usr/local/bin/bot-healthcheck.sh
 USER nobody
 ENTRYPOINT ["/usr/local/bin/bot-entrypoint.sh"]
