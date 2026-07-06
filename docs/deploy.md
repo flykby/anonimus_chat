@@ -160,27 +160,29 @@ By default, the bot uses **long polling**. For production with payments, **webho
 
 ### Option 1: Self-signed certificate with IP address
 
-Generate certificate for your server IP:
+Use your **public** IP (what Telegram can reach from the internet), not the internal VM subnet:
 
 ```bash
-./scripts/gen-webhook-cert.sh YOUR_SERVER_IP ./certs
+curl -4 ifconfig.me   # e.g. 109.122.197.235
+./scripts/gen-webhook-cert.sh YOUR_PUBLIC_IP ./certs
 ```
 
 Add to `.env`:
 
 ```env
-WEBHOOK_URL=https://YOUR_SERVER_IP:8443/telegram/webhook
+WEBHOOK_URL=https://YOUR_PUBLIC_IP:8443/telegram/webhook
 WEBHOOK_SECRET=your-random-secret-here
-WEBHOOK_CERT_PATH=./certs/webhook.pem
-WEBHOOK_KEY_PATH=./certs/webhook.key
+WEBHOOK_CERT_PATH=/app/certs/webhook.pem
+WEBHOOK_KEY_PATH=/app/certs/webhook.key
 ```
 
-Update `docker-compose.prod.yml` to expose port 8443:
+Prod compose maps host `8443` → container `8080` and mounts `./certs` read-only.
 
-```yaml
-bot:
-  ports:
-    - "8443:8443"
+If the bot was already running with a bad key permission, fix without regenerating:
+
+```bash
+chmod 644 certs/webhook.pem certs/webhook.key
+docker compose -f docker-compose.yml -f docker-compose.prod.yml restart bot
 ```
 
 ### Option 2: Domain with reverse proxy
@@ -224,7 +226,10 @@ Adjust `WorkingDirectory` in the unit file if not using `/opt/anonimus_chat`.
 | `pull access denied` | `REGISTRY_USER` / `REGISTRY_PASSWORD`, `docker login` |
 | `address already in use` | Prod does not bind app ports on the host (only optional Caddy `:80/:443`). Stale Docker endpoints often survive `ss`. Run `docker compose -f docker-compose.yml -f docker-compose.prod.yml down --remove-orphans`, `docker rm -f anonimus-postgres anonimus-redis anonimus-api anonimus-ai anonimus-bot`, `git pull`, redeploy. `deploy.sh` also removes containers stuck in `created` state. If it persists: `systemctl restart docker` |
 | Bot unhealthy | `docker logs anonimus-bot`, verify `BOT_TOKEN` |
-| No Telegram reply | Bot uses long polling; VM needs outbound HTTPS to `api.telegram.org` |
+| Webhook: `permission denied` on `webhook.key` | Bot runs as uid 65534; key must be world-readable: `chmod 644 certs/webhook.key` then restart bot |
+| Webhook: bot silent, health OK | Check `WEBHOOK_URL` uses **public** IP (`curl -4 ifconfig.me`), cert CN must match; open port 8443 in provider firewall |
+| Webhook: `too many requests` on register | Telegram rate-limits `setWebhook`; wait 1–2 min, fix cert/permissions, then restart once |
+| No Telegram reply | Long polling: VM needs outbound HTTPS to `api.telegram.org`. Webhook: see rows above |
 | Rollback missing | `.deploy/previous` exists only after ≥1 successful deploy |
 
 ## Database migrations (prod)

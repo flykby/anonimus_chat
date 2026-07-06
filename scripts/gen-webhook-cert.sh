@@ -26,8 +26,8 @@ openssl req -newkey rsa:2048 -sha256 -nodes \
     -subj "/CN=$IP_ADDRESS" \
     2>/dev/null
 
-chmod 600 "$KEY_PATH"
-chmod 644 "$CERT_PATH"
+# Bot container runs as uid 65534 and mounts ./certs read-only.
+chmod 644 "$CERT_PATH" "$KEY_PATH"
 
 echo ""
 echo "Certificate generated successfully:"
@@ -37,7 +37,8 @@ echo ""
 echo "Add to .env:"
 echo "  WEBHOOK_URL=https://$IP_ADDRESS:8443/telegram/webhook"
 echo "  WEBHOOK_SECRET=$(openssl rand -hex 32)"
-echo "  WEBHOOK_CERT_PATH=$CERT_PATH"
-echo "  WEBHOOK_KEY_PATH=$KEY_PATH"
+echo "  WEBHOOK_CERT_PATH=/app/certs/webhook.pem"
+echo "  WEBHOOK_KEY_PATH=/app/certs/webhook.key"
 echo ""
+echo "Note: use your PUBLIC IP (curl -4 ifconfig.me), not the internal VM subnet."
 echo "Note: Telegram supports ports 443, 80, 88, 8443 for webhooks"
