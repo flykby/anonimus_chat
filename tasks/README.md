@@ -68,22 +68,45 @@ flowchart TD
 
 ---
 
-## Milestone 2 — Полный бот (текущий фокус)
+## Milestone 2 — Полный бот ✅ feature-complete
 
-> Весь функционал бота end-to-end. AI = echo-заглушка (038), real LLM — после M2.
-
-См. [MILESTONE-2-full-bot.md](MILESTONE-2-full-bot.md)
+> Весь функционал бота end-to-end реализован. AI = echo-заглушка (038).  
+> Осталась E2E-верификация на проде. Детали: [MILESTONE-2-full-bot.md](MILESTONE-2-full-bot.md)
 
 | # | Задача | Статус |
 |---|--------|--------|
+| 012 | [i18n RU/EN](012-i18n-ru-en.md) | done |
 | 013–015 | Match + queue + end | done |
+| 024 | [P2P matchmaking](024-p2p-matchmaking.md) | done |
+| 025 | [P2P relay](025-p2p-relay-moderation.md) | done |
+| 026 | [Profile view](026-profile-view.md) | done |
+| 027–029 | Edit / language / delete | done |
+| 030 | [Rules page](030-rules-page.md) | done |
 | 038 | [AI echo stub](038-ai-echo-stub.md) | done |
-| 024 | [P2P matchmaking](024-p2p-matchmaking.md) | **next** |
-| 025 | [P2P relay](025-p2p-relay-moderation.md) | todo |
-| 026 | [Profile view](026-profile-view.md) | todo |
-| 030 | [Rules page](030-rules-page.md) | todo |
-| 012 | [i18n RU/EN](012-i18n-ru-en.md) | todo |
-| 027–029 | Profile edit / language / delete | todo |
+
+---
+
+## Milestone 3 — что дальше (выбрать направление)
+
+Рекомендуемый порядок после закрытия M2:
+
+| Приоритет | Блок | Задачи | Зачем |
+|-----------|------|--------|-------|
+| **A** | Real AI | 036 → 016 → 017 → 018 → 019 | Echo → настоящие диалоги с персонами |
+| **B** | Монетизация | 020 → 021 → 022 → 023 → 031 | Фото, blur, Stars, premium |
+| **C** | Match UX | 037 | Live F priority для M→F |
+| **D** | Ops | 009, 032–035 | Webhook, метрики, launch checklist |
+
+```mermaid
+flowchart LR
+    M2[M2 Full Bot done] --> E2E[E2E smoke prod]
+    E2E --> A[036+016 Real AI]
+    E2E --> B[020+ Photos Stars]
+    A --> Launch[035 Launch]
+    B --> Launch
+```
+
+**Текущий фокус:** закрыть E2E Milestone 2, затем **036 RunPod + 016 AI dialog** (если приоритет — умные диалоги) или **020–023** (если приоритет — фото и деньги).
 
 ---
 
@@ -105,7 +128,7 @@ flowchart TD
 | 009 | [Telegram bot webhook](009-telegram-bot-webhook.md) | todo |
 | 010 | [Registration FSM](010-registration-fsm.md) | done |
 | 011 | [Main menu](011-main-menu.md) | done |
-| 012 | [i18n RU/EN](012-i18n-ru-en.md) | todo |
+| 012 | [i18n RU/EN](012-i18n-ru-en.md) | done |
 
 ---
 
@@ -147,8 +170,8 @@ flowchart TD
 
 | # | Задача | Статус |
 |---|--------|--------|
-| 024 | [P2P matchmaking](024-p2p-matchmaking.md) | todo |
-| 025 | [P2P relay & moderation](025-p2p-relay-moderation.md) | todo |
+| 024 | [P2P matchmaking](024-p2p-matchmaking.md) | done |
+| 025 | [P2P relay & moderation](025-p2p-relay-moderation.md) | done |
 
 ---
 
@@ -156,11 +179,11 @@ flowchart TD
 
 | # | Задача | Статус |
 |---|--------|--------|
-| 026 | [Profile view](026-profile-view.md) | todo |
-| 027 | [Edit profile](027-edit-profile.md) | todo |
-| 028 | [Change language](028-change-language.md) | todo |
-| 029 | [Delete profile anti-abuse](029-delete-profile-antiabuse.md) | todo |
-| 030 | [Rules page](030-rules-page.md) | todo |
+| 026 | [Profile view](026-profile-view.md) | done |
+| 027 | [Edit profile](027-edit-profile.md) | done |
+| 028 | [Change language](028-change-language.md) | done |
+| 029 | [Delete profile anti-abuse](029-delete-profile-antiabuse.md) | done |
+| 030 | [Rules page](030-rules-page.md) | done |
 | 031 | [Premium purchase menu](031-premium-purchase-menu.md) | todo |
 
 ---
@@ -195,5 +218,5 @@ flowchart LR
     M7 --> Launch[035 Launch]
 ```
 
-**Текущий фокус:** Milestone 2 — полный бот без real AI.  
+**Текущий фокус:** Milestone 2 закрыт по коду — E2E smoke, затем Milestone 3 (Real AI или Photos).  
 P2P (024–025) идёт **до** RunPod (036). Live F (037) — после M2.

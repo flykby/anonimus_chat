@@ -32,7 +32,7 @@ Inside Docker Compose use host `postgres` instead of `localhost`.
 | Migration | Description |
 |-----------|-------------|
 | `00001_extensions.sql` | `vector` extension (pgvector) |
-| `00002_schema.sql` | Core tables, enums, indexes |
+| `00003_soft_delete_telegram_unique.sql` | Partial unique `telegram_id` для re-register после soft-delete |
 
 ## Go layer
 
