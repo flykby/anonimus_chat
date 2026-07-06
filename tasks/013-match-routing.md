@@ -40,9 +40,9 @@
   - M+M → `anonimus:queue:p2p:male` (оба M, seeking M)
   - F+M → очередь для hetero P2P (F seeking M; матч с совместимым M — задача 024)
 - `match_route` keys: `m_seeks_f` (ai), `m_seeks_m` (p2p), `f_seeks_f` (ai), `f_seeks_m` (p2p)
+- **Live F override для M→F** (живая F вместо AI при наличии в очереди, premium priority) — отдельная задача [037](037-live-f-priority.md)
 
 ## Out of scope
 
-- M+F как P2P (M seeking F остаётся AI)
+- Live F priority / hybrid M→F → [037](037-live-f-priority.md)
 - Гео-фильтры, возрастные фильтры при матче
-- Приоритетная очередь для premium

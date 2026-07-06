@@ -97,6 +97,7 @@ flowchart TD
 | 013 | [Match routing](013-match-routing.md) | todo |
 | 014 | [Queue UX](014-queue-ux.md) | todo |
 | 015 | [End dialog flow](015-end-dialog-flow.md) | todo |
+| 037 | [Live F priority for M→F](037-live-f-priority.md) | todo |
 
 ---
 
@@ -172,7 +173,10 @@ flowchart LR
     P0 --> P1
     P1 --> P2[013-015 Dialog]
     P2 --> P3[036+016-019 AI RunPod]
+    P2 --> P37[037 Live F priority]
     P2 --> P5[024-025 P2P]
+    P5 --> P37
+    P23[023 Premium] --> P37
     P3 --> P4[020-023 Photos]
     P1 --> P6[026-031 Profile]
     P4 --> P6

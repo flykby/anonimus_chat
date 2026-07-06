@@ -31,6 +31,7 @@
 
 - Lua script для atomic pair pop (уже есть `TryMatchPair` для same-gender queue)
 - Hetero P2P (F+M): отдельная очередь или cross-match — уточнить при реализации
+- **M+F live override:** male может получить live F из hetero pool вместо AI — задача [037](037-live-f-priority.md)
 - Проверка: оба user всё ещё online (опционально: last_seen < 60 sec)
 - Не матчить user с самим собой (sanity)
 - Fairness: FIFO по timestamp
