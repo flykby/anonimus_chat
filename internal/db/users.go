@@ -289,3 +289,52 @@ func (r *UsersRepo) UpdateProfile(ctx context.Context, telegramID int64, patch U
 	}
 	return up, nil
 }
+
+var ErrUserNotFound = errors.New("user not found")
+var ErrAlreadyDeleted = errors.New("user already deleted")
+
+func (r *UsersRepo) SoftDelete(ctx context.Context, telegramID int64, reason string) error {
+	up, ok, err := r.GetByTelegramID(ctx, telegramID)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrUserNotFound
+	}
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	tag, err := tx.Exec(ctx, `
+		UPDATE users
+		SET deleted_at = NOW()
+		WHERE id = $1 AND deleted_at IS NULL
+	`, up.User.ID)
+	if err != nil {
+		return fmt.Errorf("soft delete user: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrAlreadyDeleted
+	}
+
+	userID := up.User.ID
+	meta := events.UserDeletedMeta{}
+	if reason != "" {
+		meta.Reason = reason
+	}
+	if err := r.events.Emit(ctx, tx, events.Input{
+		UserID:   &userID,
+		Type:     events.TypeUserDeleted,
+		Metadata: meta,
+	}); err != nil {
+		return fmt.Errorf("emit user.deleted: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit tx: %w", err)
+	}
+	return nil
+}

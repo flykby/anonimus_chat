@@ -69,6 +69,15 @@ profile:
     changed: "Language changed to {language}."
     save_error: "Could not save language. Please try again later."
   delete_stub: "Profile deletion is coming soon."
+  delete_flow:
+    confirm1: "Delete your profile?"
+    confirm2: "This cannot be undone. Your data will be purged in 30 days. Delete profile?"
+    cancelled: "Profile kept."
+    done: "Profile deleted. Tap /start to register again."
+    error: "Could not delete profile. Please try again later."
+    button_confirm: "Yes, delete"
+    button_final_confirm: "Yes, delete permanently"
+    button_cancel: "Cancel"
   view:
     template: "User {uuid}\n\nPremium: {premium}\n\nProfile:\nGender: {gender}\nLooking for: {seeking}\nAge: {age}\nLanguage: {language_code}"
   premium:

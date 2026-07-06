@@ -69,6 +69,15 @@ profile:
     changed: "Язык изменён на {language}."
     save_error: "Не удалось сохранить язык. Попробуй позже."
   delete_stub: "Удаление профиля скоро будет доступно."
+  delete_flow:
+    confirm1: "Точно удалить профиль?"
+    confirm2: "Это необратимо. Данные будут удалены через 30 дней. Удалить профиль?"
+    cancelled: "Профиль сохранён."
+    done: "Профиль удалён. Нажми /start, чтобы зарегистрироваться заново."
+    error: "Не удалось удалить профиль. Попробуй позже."
+    button_confirm: "Да, удалить"
+    button_final_confirm: "Да, удалить навсегда"
+    button_cancel: "Отмена"
   view:
     template: "Пользователь {uuid}\n\nPremium: {premium}\n\nАнкета:\nПол: {gender}\nИщу: {seeking}\nВозраст: {age}\nЯзык: {language_code}"
   premium:

@@ -55,6 +55,17 @@ func TestValidateUserProfileUpdatedMeta(t *testing.T) {
 	}
 }
 
+func TestValidateUserDeletedMeta(t *testing.T) {
+	t.Parallel()
+
+	if err := validateMetadata(TypeUserDeleted, UserDeletedMeta{Reason: "user_requested"}); err != nil {
+		t.Fatalf("valid metadata: %v", err)
+	}
+	if err := validateMetadata(TypeUserDeleted, UserDeletedMeta{}); err != nil {
+		t.Fatalf("empty reason allowed: %v", err)
+	}
+}
+
 func TestValidateDialogStartedMeta(t *testing.T) {
 	t.Parallel()
 

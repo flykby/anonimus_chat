@@ -33,6 +33,7 @@ func (a *App) Register(b *bot.Bot) {
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "reg:", bot.MatchTypePrefix, a.onRegCallback)
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "edit:", bot.MatchTypePrefix, a.onEditCallback)
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "lang:", bot.MatchTypePrefix, a.onLangCallback)
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "delete:", bot.MatchTypePrefix, a.onDeleteCallback)
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "menu:", bot.MatchTypePrefix, a.onMenuCallback)
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "end:", bot.MatchTypePrefix, a.onEndCallback)
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "p2p:", bot.MatchTypePrefix, a.onP2PCallback)

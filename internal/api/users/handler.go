@@ -10,12 +10,14 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/flykby/anonimus_chat/internal/db"
+	"github.com/flykby/anonimus_chat/internal/profile"
 	"github.com/flykby/anonimus_chat/internal/shared"
 )
 
 type Handler struct {
 	Users   *db.UsersRepo
 	Dialogs *db.DialogsRepo
+	Delete  *profile.DeleteService
 }
 
 type registerRequest struct {
@@ -66,6 +68,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /users/me/profile", h.getProfileViewMe)
 	mux.HandleFunc("GET /users/me/language", h.getLanguageMe)
 	mux.HandleFunc("PATCH /users/me/profile", h.patchProfileMe)
+	mux.HandleFunc("DELETE /users/me", h.deleteMe)
 	mux.HandleFunc("POST /users/register", h.register)
 }
 
@@ -254,6 +257,53 @@ func parseProfilePatch(req patchProfileRequest) (db.UpdateProfilePatch, error) {
 		return patch, errors.New("at least one field required")
 	}
 	return patch, nil
+}
+
+type deleteMeRequest struct {
+	TelegramID int64 `json:"telegram_id"`
+}
+
+type deleteMeResponse struct {
+	Status            string  `json:"status"`
+	PartnerTelegramID *int64  `json:"partner_telegram_id,omitempty"`
+	PartnerLanguage   *string `json:"partner_language,omitempty"`
+}
+
+func (h *Handler) deleteMe(w http.ResponseWriter, r *http.Request) {
+	if h.Delete == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "delete unavailable"})
+		return
+	}
+
+	var req deleteMeRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
+		return
+	}
+	if req.TelegramID <= 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "telegram_id required"})
+		return
+	}
+
+	result, err := h.Delete.Delete(r.Context(), req.TelegramID)
+	if errors.Is(err, db.ErrUserNotFound) {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+		return
+	}
+	if errors.Is(err, db.ErrAlreadyDeleted) {
+		writeJSON(w, http.StatusConflict, map[string]string{"error": "already_deleted"})
+		return
+	}
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, deleteMeResponse{
+		Status:            "deleted",
+		PartnerTelegramID: result.PartnerTelegramID,
+		PartnerLanguage:   result.PartnerLanguage,
+	})
 }
 
 func toProfileViewResponse(up db.UserProfile, premium db.PremiumStatus) profileViewResponse {

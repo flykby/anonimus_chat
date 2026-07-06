@@ -21,6 +21,7 @@ import (
 	"github.com/flykby/anonimus_chat/internal/events"
 	"github.com/flykby/anonimus_chat/internal/match"
 	"github.com/flykby/anonimus_chat/internal/platform/env"
+	"github.com/flykby/anonimus_chat/internal/profile"
 	iredis "github.com/flykby/anonimus_chat/internal/redis"
 	"github.com/flykby/anonimus_chat/internal/redis/blockpair"
 	"github.com/flykby/anonimus_chat/internal/redis/dialogctx"
@@ -88,7 +89,16 @@ func main() {
 		}
 		matchSvc := match.NewService(pool, usersRepo, dialogsRepo, queue, emitter, sessions, blockpairStore)
 		dialogSvc := dialog.NewService(pool, dialogsRepo, usersRepo, emitter, sessions, dctx, ratelimitStore, blockpairStore)
-		(&users.Handler{Users: usersRepo, Dialogs: dialogsRepo}).RegisterRoutes(mux)
+		benefitsRepo := db.NewDeletionBenefitsRepo(pool)
+		deleteSvc := &profile.DeleteService{
+			Users:     usersRepo,
+			Dialogs:   dialogsRepo,
+			DialogSvc: dialogSvc,
+			MatchSvc:  matchSvc,
+			Sessions:  sessions,
+			Benefits:  benefitsRepo,
+		}
+		(&users.Handler{Users: usersRepo, Dialogs: dialogsRepo, Delete: deleteSvc}).RegisterRoutes(mux)
 		(&matchapi.Handler{Match: matchSvc}).RegisterRoutes(mux)
 		(&dialogapi.Handler{Dialogs: dialogSvc, Users: usersRepo}).RegisterRoutes(mux)
 	}

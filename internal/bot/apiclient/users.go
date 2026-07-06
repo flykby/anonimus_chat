@@ -105,3 +105,43 @@ func (c *Client) Register(ctx context.Context, req RegisterRequest) (Profile, er
 	}
 	return profile, nil
 }
+
+type DeleteProfileResponse struct {
+	Status            string  `json:"status"`
+	PartnerTelegramID *int64  `json:"partner_telegram_id,omitempty"`
+	PartnerLanguage   *string `json:"partner_language,omitempty"`
+}
+
+func (c *Client) DeleteProfile(ctx context.Context, telegramID int64) (DeleteProfileResponse, error) {
+	body, err := json.Marshal(map[string]int64{"telegram_id": telegramID})
+	if err != nil {
+		return DeleteProfileResponse{}, err
+	}
+
+	url := c.BaseURL + "/users/me"
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, bytes.NewReader(body))
+	if err != nil {
+		return DeleteProfileResponse{}, err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return DeleteProfileResponse{}, err
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+	if resp.StatusCode == http.StatusNotFound {
+		return DeleteProfileResponse{}, ErrNotRegistered
+	}
+	if resp.StatusCode != http.StatusOK {
+		return DeleteProfileResponse{}, fmt.Errorf("api delete profile: status %d: %s", resp.StatusCode, strings.TrimSpace(string(respBody)))
+	}
+
+	var result DeleteProfileResponse
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return DeleteProfileResponse{}, err
+	}
+	return result, nil
+}

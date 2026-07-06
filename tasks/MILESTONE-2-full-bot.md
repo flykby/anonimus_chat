@@ -16,15 +16,10 @@
 | 026 | Profile view |
 | 027 | Edit profile |
 | 028 | Change language |
+| 029 | Delete profile |
 | 030 | Rules page |
 | 012 | i18n RU/EN |
 | 038 | AI echo stub |
-
-## Очередь (делаем дальше)
-
-| Приоритет | # | Задача | Зачем |
-|-----------|---|--------|-------|
-| 1 | 029 | Delete profile | Удаление + anti-abuse |
 
 ## Отложено (после Milestone 2)
 

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/flykby/anonimus_chat/internal/profile"
 )
 
 func TestRegisterBadAge(t *testing.T) {
@@ -146,6 +148,23 @@ func TestPatchProfileInvalidLanguage(t *testing.T) {
 		Language:   &lang,
 	})
 	req := httptest.NewRequest(http.MethodPatch, "/users/me/profile", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", rec.Code)
+	}
+}
+
+func TestDeleteMeMissingTelegramID(t *testing.T) {
+	t.Parallel()
+
+	h := &Handler{Users: nil, Delete: &profile.DeleteService{}}
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	body, _ := json.Marshal(deleteMeRequest{})
+	req := httptest.NewRequest(http.MethodDelete, "/users/me", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
 

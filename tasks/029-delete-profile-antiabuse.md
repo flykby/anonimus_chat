@@ -1,6 +1,6 @@
 # 029. Delete profile anti-abuse
 
-**Статус:** todo  
+**Статус:** done  
 **Фаза:** profile  
 **Зависимости:** 026, 021, 008
 
@@ -22,12 +22,12 @@
 
 ## Acceptance criteria
 
-- [ ] Cancel на любом шаге → профиль сохранён
-- [ ] Бесплатный unlock предлагается максимум 1 раз per telegram_id ever
-- [ ] После удаления /start → новая регистрация
-- [ ] Premium не восстанавливается на новом профиле
-- [ ] P2P partner уведомлён если был активный dialog
-- [ ] Данные: soft-delete + purge schedule 30 дней (document in rules)
+- [x] Cancel на любом шаге → профиль сохранён
+- [x] Бесплатный unlock предлагается максимум 1 раз per telegram_id ever (инфра `deletion_benefits`; UI после 021)
+- [x] После удаления /start → новая регистрация
+- [x] Premium не восстанавливается на новом профиле
+- [x] P2P partner уведомлён если был активный dialog
+- [x] Данные: soft-delete + purge schedule 30 дней (document in rules)
 
 ## Технические заметки
 
