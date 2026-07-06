@@ -1,6 +1,6 @@
 # 014. Queue UX
 
-**Статус:** todo  
+**Статус:** done  
 **Фаза:** dialog  
 **Зависимости:** 013, 009
 
@@ -19,25 +19,25 @@ UX экрана ожидания при нажатии «Начать разго
   Ищем лучшего/ую из них
   ```
 - **AI-маршрут (M+F, F+F):** N — синтетическое число (random 3–47), задержка 2–5 сек перед «нашли»
-- **P2P-маршрут (M+M, F+M):** N — реальный count из соответствующей Redis-очереди (`queue:p2p:male` или hetero P2P queue)
+- **P2P-маршрут (M+M, F+M):** N — реальный count из соответствующей Redis-очереди
 - Typing indicator (`send_chat_action: typing`) во время ожидания
 - После матча — сообщение «Собеседник найден» + начало диалога
 - Таймаут P2P: если нет пары за 120 сек — предложить подождать / отменить
 
 ## Acceptance criteria
 
-- [ ] Сообщение очереди отображается на языке пользователя
-- [ ] AI: матч происходит через 2–5 сек с synthetic N
-- [ ] P2P: N отражает реальный размер очереди
-- [ ] Пользователь может отменить ожидание (кнопка «Отмена»)
-- [ ] Emit `queue.matched` при успешном матче
+- [x] Сообщение очереди отображается на языке пользователя
+- [x] AI: матч происходит через 2–5 сек с synthetic N
+- [x] P2P: N отражает реальный размер очереди
+- [x] Пользователь может отменить ожидание (кнопка «Отмена»)
+- [x] Emit `queue.matched` при успешном матче
 
 ## Технические заметки
 
-- Synthetic N: `random.randint(3, 47)`, не привязан к БД
-- Для AI не нужна реальная очередь — сразу assign persona после delay
-- Обновление N в реальном времени для P2P опционально (edit message каждые 10 сек)
-- Gendered text RU: «лучшего» (M) / «лучшую» (F) — через i18n plural/gender keys
+- AI: `POST /match/start` → searching + `display_count`; `POST /match/complete` → dialog + `queue.matched`
+- Bot: `internal/bot/handlers/queue.go` — typing, delay, cancel keyboard
+- P2P auto-match — задача 024; 014 показывает очередь, typing, timeout, cancel
+- Gendered RU: «лучшего» / «лучшую» в `menu.QueueWaitingText`
 
 ## Out of scope
 

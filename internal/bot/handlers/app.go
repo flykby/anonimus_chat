@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"strings"
+	"sync"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
@@ -16,10 +17,11 @@ import (
 )
 
 type App struct {
-	Logger *slog.Logger
-	FSM    *fsm.Store
-	Draft  *regdraft.Store
-	API    *apiclient.Client
+	Logger    *slog.Logger
+	FSM       *fsm.Store
+	Draft     *regdraft.Store
+	API       *apiclient.Client
+	queueWait sync.Map
 }
 
 func (a *App) Register(b *bot.Bot) {

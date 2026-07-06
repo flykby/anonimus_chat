@@ -42,23 +42,25 @@ func TestIntegrationStartAIRoute(t *testing.T) {
 		t.Fatalf("Register(): %v", err)
 	}
 
-	resp, err := svc.Start(ctx, telegramID)
+	searching, err := svc.Start(ctx, telegramID)
 	if err != nil {
 		t.Fatalf("Start(): %v", err)
 	}
-	if resp.Route != "ai" || resp.Status != "matched" || resp.DialogID == nil {
-		t.Fatalf("unexpected response: %+v", resp)
+	if searching.Route != "ai" || searching.Status != "searching" || searching.DisplayCount == nil {
+		t.Fatalf("unexpected searching response: %+v", searching)
 	}
-	if resp.MatchRoute != "m_seeks_f" {
-		t.Fatalf("match_route = %q", resp.MatchRoute)
+
+	matched, err := svc.CompleteAI(ctx, telegramID, 3)
+	if err != nil {
+		t.Fatalf("CompleteAI(): %v", err)
+	}
+	if matched.Status != "matched" || matched.DialogID == nil {
+		t.Fatalf("unexpected matched response: %+v", matched)
 	}
 
 	active, err := users.HasActiveDialog(ctx, up.User.ID)
-	if err != nil {
-		t.Fatalf("HasActiveDialog: %v", err)
-	}
-	if !active {
-		t.Fatal("expected active dialog")
+	if err != nil || !active {
+		t.Fatalf("expected active dialog for user %d", up.User.ID)
 	}
 }
 
@@ -94,6 +96,9 @@ func TestIntegrationStartRejectsActiveDialog(t *testing.T) {
 
 	if _, err := svc.Start(ctx, telegramID); err != nil {
 		t.Fatalf("first Start(): %v", err)
+	}
+	if _, err := svc.CompleteAI(ctx, telegramID, 2); err != nil {
+		t.Fatalf("CompleteAI(): %v", err)
 	}
 	if _, err := svc.Start(ctx, telegramID); err != match.ErrActiveDialog {
 		t.Fatalf("second Start() err = %v, want ErrActiveDialog", err)

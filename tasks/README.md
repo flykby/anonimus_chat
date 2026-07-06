@@ -95,7 +95,7 @@ flowchart TD
 | # | Задача | Статус |
 |---|--------|--------|
 | 013 | [Match routing](013-match-routing.md) | done |
-| 014 | [Queue UX](014-queue-ux.md) | todo |
+| 014 | [Queue UX](014-queue-ux.md) | done |
 | 015 | [End dialog flow](015-end-dialog-flow.md) | todo |
 | 037 | [Live F priority for M→F](037-live-f-priority.md) | todo |
 

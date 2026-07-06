@@ -9,11 +9,12 @@ import (
 )
 
 const (
-	CBBack      = "menu:back"
-	CBStartChat = "menu:start_chat"
-	CBProfile   = "menu:profile"
-	CBRules     = "menu:rules"
-	CBEndDialog = "menu:end_dialog"
+	CBBack        = "menu:back"
+	CBStartChat   = "menu:start_chat"
+	CBProfile     = "menu:profile"
+	CBRules       = "menu:rules"
+	CBEndDialog   = "menu:end_dialog"
+	CBQueueCancel = "menu:queue_cancel"
 )
 
 type Action int
@@ -24,6 +25,7 @@ const (
 	ActionProfile
 	ActionRules
 	ActionEndDialog
+	ActionCancelQueue
 )
 
 type Labels struct {
@@ -38,6 +40,10 @@ type Labels struct {
 	StartChatP2PQueued string
 	StartChatActive    string
 	StartChatError     string
+	QueueCancel        string
+	QueueMatched       string
+	QueueTimeout       string
+	QueueCancelled     string
 	ProfileMsg         string
 	RulesMsg           string
 	EndDialogMsg       string
@@ -58,6 +64,10 @@ func LabelsFor(lang shared.Language) Labels {
 			StartChatP2PQueued: "You are in the queue. We will notify you when a partner is found.",
 			StartChatActive:    "You already have an active chat.",
 			StartChatError:     "Could not start a chat. Please try again later.",
+			QueueCancel:        "Cancel",
+			QueueMatched:       "Partner found. Send your first message.",
+			QueueTimeout:       "Still searching. Tap Cancel to leave the queue or wait a bit longer.",
+			QueueCancelled:     "Search cancelled.",
 			ProfileMsg:         "Profile section is coming soon.",
 			RulesMsg:           "1. Be respectful.\n2. Do not share personal data.\n3. No illegal content.\n\nFull rules page is coming soon.",
 			EndDialogMsg:       "Ending a dialog is coming soon.",
@@ -75,6 +85,10 @@ func LabelsFor(lang shared.Language) Labels {
 			StartChatP2PQueued: "Ты в очереди на поиск собеседника. Подожди немного.",
 			StartChatActive:    "У тебя уже есть активный диалог.",
 			StartChatError:     "Не удалось начать разговор. Попробуй позже.",
+			QueueCancel:        "Отмена",
+			QueueMatched:       "Собеседник найден. Напиши первым сообщение.",
+			QueueTimeout:       "Всё ещё ищем. Нажми «Отмена», чтобы выйти из очереди, или подожди ещё.",
+			QueueCancelled:     "Поиск отменён.",
 			ProfileMsg:         "Раздел профиля скоро будет доступен.",
 			RulesMsg:           "1. Будь уважителен к собеседнику.\n2. Не делись личными данными.\n3. Запрещён незаконный контент.\n\nПолная страница правил скоро появится.",
 			EndDialogMsg:       "Завершение диалога скоро будет доступно.",
@@ -103,6 +117,8 @@ func ActionForText(text string) (Action, shared.Language) {
 			return ActionRules, lang
 		case labels.EndDialog:
 			return ActionEndDialog, lang
+		case labels.QueueCancel:
+			return ActionCancelQueue, lang
 		}
 	}
 	return ActionUnknown, shared.LanguageRU
