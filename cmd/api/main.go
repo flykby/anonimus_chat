@@ -13,11 +13,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	goredis "github.com/redis/go-redis/v9"
 
+	matchapi "github.com/flykby/anonimus_chat/internal/api/match"
 	"github.com/flykby/anonimus_chat/internal/api/users"
 	"github.com/flykby/anonimus_chat/internal/db"
 	"github.com/flykby/anonimus_chat/internal/events"
+	"github.com/flykby/anonimus_chat/internal/match"
 	"github.com/flykby/anonimus_chat/internal/platform/env"
 	iredis "github.com/flykby/anonimus_chat/internal/redis"
+	"github.com/flykby/anonimus_chat/internal/redis/matchqueue"
 )
 
 func main() {
@@ -63,7 +66,15 @@ func main() {
 	mux.HandleFunc("GET /health", healthHandler(pool, rdb))
 	if pool != nil {
 		emitter := events.NewEmitter(logger)
-		(&users.Handler{Users: db.NewUsersRepo(pool, emitter)}).RegisterRoutes(mux)
+		usersRepo := db.NewUsersRepo(pool, emitter)
+		dialogsRepo := db.NewDialogsRepo(pool)
+		var queue *matchqueue.Store
+		if rdb != nil {
+			queue = matchqueue.New(rdb)
+		}
+		matchSvc := match.NewService(pool, usersRepo, dialogsRepo, queue, emitter)
+		(&users.Handler{Users: usersRepo}).RegisterRoutes(mux)
+		(&matchapi.Handler{Match: matchSvc}).RegisterRoutes(mux)
 	}
 
 	srv := &http.Server{

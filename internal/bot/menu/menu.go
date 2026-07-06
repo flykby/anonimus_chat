@@ -27,45 +27,57 @@ const (
 )
 
 type Labels struct {
-	MenuTitle    string
-	StartChat    string
-	Profile      string
-	Rules        string
-	EndDialog    string
-	Back         string
-	StartChatMsg string
-	ProfileMsg   string
-	RulesMsg     string
-	EndDialogMsg string
+	MenuTitle          string
+	StartChat          string
+	Profile            string
+	Rules              string
+	EndDialog          string
+	Back               string
+	StartChatMsg       string
+	StartChatAIMatched string
+	StartChatP2PQueued string
+	StartChatActive    string
+	StartChatError     string
+	ProfileMsg         string
+	RulesMsg           string
+	EndDialogMsg       string
 }
 
 func LabelsFor(lang shared.Language) Labels {
 	switch lang {
 	case shared.LanguageEN:
 		return Labels{
-			MenuTitle:    "Main menu",
-			StartChat:    "Start chat",
-			Profile:      "Profile",
-			Rules:        "Rules",
-			EndDialog:    "End dialog",
-			Back:         "← Back",
-			StartChatMsg: "Matchmaking is coming soon.",
-			ProfileMsg:   "Profile section is coming soon.",
-			RulesMsg:     "1. Be respectful.\n2. Do not share personal data.\n3. No illegal content.\n\nFull rules page is coming soon.",
-			EndDialogMsg: "Ending a dialog is coming soon.",
+			MenuTitle:          "Main menu",
+			StartChat:          "Start chat",
+			Profile:            "Profile",
+			Rules:              "Rules",
+			EndDialog:          "End dialog",
+			Back:               "← Back",
+			StartChatMsg:       "Matchmaking is coming soon.",
+			StartChatAIMatched: "Chat started. Send your first message.",
+			StartChatP2PQueued: "You are in the queue. We will notify you when a partner is found.",
+			StartChatActive:    "You already have an active chat.",
+			StartChatError:     "Could not start a chat. Please try again later.",
+			ProfileMsg:         "Profile section is coming soon.",
+			RulesMsg:           "1. Be respectful.\n2. Do not share personal data.\n3. No illegal content.\n\nFull rules page is coming soon.",
+			EndDialogMsg:       "Ending a dialog is coming soon.",
 		}
 	default:
 		return Labels{
-			MenuTitle:    "Главное меню",
-			StartChat:    "Начать разговор",
-			Profile:      "Профиль",
-			Rules:        "Правила",
-			EndDialog:    "Завершить диалог",
-			Back:         "← Назад",
-			StartChatMsg: "Поиск собеседника скоро будет доступен.",
-			ProfileMsg:   "Раздел профиля скоро будет доступен.",
-			RulesMsg:     "1. Будь уважителен к собеседнику.\n2. Не делись личными данными.\n3. Запрещён незаконный контент.\n\nПолная страница правил скоро появится.",
-			EndDialogMsg: "Завершение диалога скоро будет доступно.",
+			MenuTitle:          "Главное меню",
+			StartChat:          "Начать разговор",
+			Profile:            "Профиль",
+			Rules:              "Правила",
+			EndDialog:          "Завершить диалог",
+			Back:               "← Назад",
+			StartChatMsg:       "Поиск собеседника скоро будет доступен.",
+			StartChatAIMatched: "Диалог начат. Напиши первым сообщение.",
+			StartChatP2PQueued: "Ты в очереди на поиск собеседника. Подожди немного.",
+			StartChatActive:    "У тебя уже есть активный диалог.",
+			StartChatError:     "Не удалось начать разговор. Попробуй позже.",
+			ProfileMsg:         "Раздел профиля скоро будет доступен.",
+			RulesMsg:           "1. Будь уважителен к собеседнику.\n2. Не делись личными данными.\n3. Запрещён незаконный контент.\n\nПолная страница правил скоро появится.",
+			EndDialogMsg:       "Завершение диалога скоро будет доступно.",
 		}
 	}
 }

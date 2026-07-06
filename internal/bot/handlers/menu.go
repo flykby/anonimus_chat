@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
@@ -22,7 +23,7 @@ func (a *App) handleRegisteredMessage(ctx context.Context, b *bot.Bot, update *m
 	action, _ := menu.ActionForText(update.Message.Text)
 	switch action {
 	case menu.ActionStartChat:
-		a.sendReply(ctx, b, update.Message.Chat.ID, labels.StartChatMsg, menu.MainKeyboard(labels))
+		a.handleStartChat(ctx, b, update.Message.Chat.ID, update.Message.From.ID, labels)
 	case menu.ActionProfile:
 		a.sendProfileStub(ctx, b, update.Message.Chat.ID, profile, labels)
 	case menu.ActionRules:
@@ -80,6 +81,28 @@ func (a *App) showMainMenu(ctx context.Context, b *bot.Bot, chatID int64, profil
 	}
 
 	a.sendReply(ctx, b, chatID, labels.MenuTitle, menu.MainKeyboard(labels))
+}
+
+func (a *App) handleStartChat(ctx context.Context, b *bot.Bot, chatID, telegramID int64, labels menu.Labels) {
+	result, err := a.API.StartMatch(ctx, telegramID)
+	if errors.Is(err, apiclient.ErrActiveDialog) {
+		a.sendReply(ctx, b, chatID, labels.StartChatActive, menu.DialogKeyboard(labels))
+		return
+	}
+	if err != nil {
+		a.Logger.Error("start match failed", "err", err, "user_id", telegramID)
+		a.sendReply(ctx, b, chatID, labels.StartChatError, menu.MainKeyboard(labels))
+		return
+	}
+
+	switch result.Route {
+	case "ai":
+		a.sendReply(ctx, b, chatID, labels.StartChatAIMatched, menu.DialogKeyboard(labels))
+	case "p2p":
+		a.sendReply(ctx, b, chatID, labels.StartChatP2PQueued, menu.MainKeyboard(labels))
+	default:
+		a.sendReply(ctx, b, chatID, labels.StartChatError, menu.MainKeyboard(labels))
+	}
 }
 
 func (a *App) sendProfileStub(ctx context.Context, b *bot.Bot, chatID int64, profile apiclient.Profile, labels menu.Labels) {

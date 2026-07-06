@@ -1,6 +1,6 @@
 # 013. Match routing
 
-**Статус:** todo  
+**Статус:** done  
 **Фаза:** dialog  
 **Зависимости:** 010, 007, 008
 
@@ -25,22 +25,22 @@
 
 ## Acceptance criteria
 
-- [ ] M+F всегда попадает в AI-ветку
-- [ ] M+M попадает в P2P-очередь
-- [ ] F+F всегда попадает в AI-ветку
-- [ ] F+M попадает в P2P-очередь
-- [ ] Повторный `start` при активном диалоге → отказ
-- [ ] `match_route` пишется в `dialog.started` event
+- [x] M+F всегда попадает в AI-ветку
+- [x] M+M попадает в P2P-очередь
+- [x] F+F всегда попадает в AI-ветку
+- [x] F+M попадает в P2P-очередь
+- [x] Повторный `start` при активном диалоге → отказ
+- [x] `match_route` пишется в `dialog.started` event
 
 ## Технические заметки
 
-- Route resolver — чистая функция: `resolve_route(gender, seeking) -> MatchRoute`
-- AI route: сразу создать dialog + назначить persona (задача 017, 032)
-- P2P route: добавить в Redis queue (задача 024)
-  - M+M → `anonimus:queue:p2p:male` (оба M, seeking M)
-  - F+M → очередь для hetero P2P (F seeking M; матч с совместимым M — задача 024)
-- `match_route` keys: `m_seeks_f` (ai), `m_seeks_m` (p2p), `f_seeks_f` (ai), `f_seeks_m` (p2p)
-- **Live F override для M→F** (живая F вместо AI при наличии в очереди, premium priority) — отдельная задача [037](037-live-f-priority.md)
+- `internal/match/route.go` — `Resolve(gender, seeking)`
+- `internal/match/service.go` — `Start(telegram_id)`
+- AI route: создаёт `dialogs` type=ai, emit `queue.entered` + `dialog.started`
+- P2P route: `matchqueue.Enqueue`, emit `queue.entered`
+- Bot: «Начать разговор» → `POST /match/start`
+- Persona assignment — задача 017
+- **Live F override для M→F** — [037](037-live-f-priority.md)
 
 ## Out of scope
 
