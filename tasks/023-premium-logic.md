@@ -1,6 +1,6 @@
 # 023. Premium logic
 
-**Статус:** todo  
+**Статус:** done  
 **Фаза:** monetization  
 **Зависимости:** 006, 022
 

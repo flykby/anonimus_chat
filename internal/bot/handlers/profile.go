@@ -45,10 +45,7 @@ func (a *App) sendProfileView(ctx context.Context, b *bot.Bot, chatID, telegramI
 func (a *App) handleProfileCallback(ctx context.Context, b *bot.Bot, chatID, telegramID int64, data string, labels menu.Labels, lang shared.Language) {
 	switch data {
 	case menu.CBProfilePremium:
-		a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
-			Text:     labels.ProfilePremiumStub,
-			Keyboard: menu.MainKeyboard(labels),
-		}})
+		a.sendPremiumMenu(ctx, b, chatID, telegramID, lang)
 	case menu.CBProfileEdit:
 		a.sendEditMenu(ctx, b, chatID, telegramID, lang)
 	case menu.CBProfileLanguage:

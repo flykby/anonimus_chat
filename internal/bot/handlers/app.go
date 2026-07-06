@@ -21,13 +21,15 @@ import (
 )
 
 type App struct {
-	Logger       *slog.Logger
-	FSM          *fsm.Store
-	Draft        *regdraft.Store
-	NavScreen    *navscreen.Store
-	API          *apiclient.Client
-	ReportChatID int64
-	queueWait    sync.Map
+	Logger              *slog.Logger
+	FSM                 *fsm.Store
+	Draft               *regdraft.Store
+	NavScreen           *navscreen.Store
+	API                 *apiclient.Client
+	ReportChatID        int64
+	PremiumPriceStars   int
+	PremiumDurationDays int
+	queueWait           sync.Map
 }
 
 func (a *App) Register(b *bot.Bot) {
@@ -39,6 +41,9 @@ func (a *App) Register(b *bot.Bot) {
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "menu:", bot.MatchTypePrefix, a.onMenuCallback)
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "end:", bot.MatchTypePrefix, a.onEndCallback)
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "p2p:", bot.MatchTypePrefix, a.onP2PCallback)
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "premium:", bot.MatchTypePrefix, a.onPremiumCallback)
+	b.RegisterHandlerMatchFunc(a.matchPreCheckout, a.handlePreCheckoutQuery)
+	b.RegisterHandlerMatchFunc(a.matchSuccessfulPayment, a.handleSuccessfulPayment)
 }
 
 func (a *App) Default(ctx context.Context, b *bot.Bot, update *models.Update) {

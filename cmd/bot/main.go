@@ -87,12 +87,14 @@ func runTelegramBot(ctx context.Context, logger *slog.Logger, cfg config.Config)
 	defer rdb.Close()
 
 	app := &handlers.App{
-		Logger:       logger,
-		FSM:          fsm.New(rdb),
-		Draft:        regdraft.New(rdb),
-		NavScreen:    navscreen.New(rdb),
-		API:          apiclient.NewClient(cfg.APIURL),
-		ReportChatID: cfg.ReportChatID,
+		Logger:              logger,
+		FSM:                 fsm.New(rdb),
+		Draft:               regdraft.New(rdb),
+		NavScreen:           navscreen.New(rdb),
+		API:                 apiclient.NewClient(cfg.APIURL),
+		ReportChatID:        cfg.ReportChatID,
+		PremiumPriceStars:   cfg.PremiumPriceStars,
+		PremiumDurationDays: cfg.PremiumDurationDays,
 	}
 
 	tg, err := bot.New(cfg.BotToken, bot.WithDefaultHandler(app.Default))

@@ -15,9 +15,10 @@ import (
 )
 
 type Handler struct {
-	Users   *db.UsersRepo
-	Dialogs *db.DialogsRepo
-	Delete  *profile.DeleteService
+	Users    *db.UsersRepo
+	Dialogs  *db.DialogsRepo
+	Delete   *profile.DeleteService
+	Payments *db.PaymentsRepo
 }
 
 type registerRequest struct {
@@ -70,6 +71,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("PATCH /users/me/profile", h.patchProfileMe)
 	mux.HandleFunc("DELETE /users/me", h.deleteMe)
 	mux.HandleFunc("POST /users/register", h.register)
+	mux.HandleFunc("POST /users/me/premium/purchase", h.purchasePremium)
 }
 
 func (h *Handler) getByTelegram(w http.ResponseWriter, r *http.Request) {
@@ -303,6 +305,91 @@ func (h *Handler) deleteMe(w http.ResponseWriter, r *http.Request) {
 		Status:            "deleted",
 		PartnerTelegramID: result.PartnerTelegramID,
 		PartnerLanguage:   result.PartnerLanguage,
+	})
+}
+
+type purchasePremiumRequest struct {
+	TelegramID       int64  `json:"telegram_id"`
+	AmountStars      int    `json:"amount_stars"`
+	DurationDays     int    `json:"duration_days"`
+	TelegramChargeID string `json:"telegram_charge_id"`
+	ProviderChargeID string `json:"provider_charge_id"`
+}
+
+type purchasePremiumResponse struct {
+	Status    string    `json:"status"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
+func (h *Handler) purchasePremium(w http.ResponseWriter, r *http.Request) {
+	if h.Payments == nil {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "payments unavailable"})
+		return
+	}
+
+	var req purchasePremiumRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
+		return
+	}
+	if req.TelegramID <= 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "telegram_id required"})
+		return
+	}
+	if req.AmountStars <= 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "amount_stars required"})
+		return
+	}
+	if req.DurationDays <= 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "duration_days required"})
+		return
+	}
+	if req.TelegramChargeID == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "telegram_charge_id required"})
+		return
+	}
+
+	exists, err := h.Payments.ExistsByChargeID(r.Context(), req.TelegramChargeID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+		return
+	}
+	if exists {
+		writeJSON(w, http.StatusConflict, map[string]string{"error": "payment already processed"})
+		return
+	}
+
+	up, ok, err := h.Users.GetByTelegramID(r.Context(), req.TelegramID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+		return
+	}
+	if !ok {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "user not found"})
+		return
+	}
+
+	_, err = h.Payments.Insert(r.Context(), db.Payment{
+		UserID:           up.User.ID,
+		Type:             db.PaymentTypePremium,
+		AmountStars:      req.AmountStars,
+		TelegramChargeID: req.TelegramChargeID,
+		ProviderChargeID: req.ProviderChargeID,
+	})
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+		return
+	}
+
+	expiresAt, err := h.Users.ExtendPremium(r.Context(), up.User.ID, req.DurationDays)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, purchasePremiumResponse{
+		Status:    "purchased",
+		ExpiresAt: expiresAt,
 	})
 }
 

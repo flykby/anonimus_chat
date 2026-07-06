@@ -161,8 +161,8 @@ flowchart LR
 |---|--------|--------|
 | 020 | [Photo catalog (+ embedding search)](020-photo-catalog.md) | todo |
 | 021 | [Photo delivery & blur](021-photo-delivery-blur.md) | todo |
-| 022 | [Telegram Stars payments](022-telegram-stars-payments.md) | todo |
-| 023 | [Premium logic](023-premium-logic.md) | todo |
+| 022 | [Telegram Stars payments](022-telegram-stars-payments.md) | done |
+| 023 | [Premium logic](023-premium-logic.md) | done |
 
 ---
 
@@ -184,7 +184,7 @@ flowchart LR
 | 028 | [Change language](028-change-language.md) | done |
 | 029 | [Delete profile anti-abuse](029-delete-profile-antiabuse.md) | done |
 | 030 | [Rules page](030-rules-page.md) | done |
-| 031 | [Premium purchase menu](031-premium-purchase-menu.md) | todo |
+| 031 | [Premium purchase menu](031-premium-purchase-menu.md) | done |
 
 ---
 

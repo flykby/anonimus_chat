@@ -98,7 +98,8 @@ func main() {
 			Sessions:  sessions,
 			Benefits:  benefitsRepo,
 		}
-		(&users.Handler{Users: usersRepo, Dialogs: dialogsRepo, Delete: deleteSvc}).RegisterRoutes(mux)
+		paymentsRepo := db.NewPaymentsRepo(pool)
+		(&users.Handler{Users: usersRepo, Dialogs: dialogsRepo, Delete: deleteSvc, Payments: paymentsRepo}).RegisterRoutes(mux)
 		(&matchapi.Handler{Match: matchSvc}).RegisterRoutes(mux)
 		(&dialogapi.Handler{Dialogs: dialogSvc, Users: usersRepo}).RegisterRoutes(mux)
 	}

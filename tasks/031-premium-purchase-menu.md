@@ -1,6 +1,6 @@
 # 031. Premium purchase menu
 
-**Статус:** todo  
+**Статус:** done  
 **Фаза:** profile  
 **Зависимости:** 026, 022, 023
 

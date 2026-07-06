@@ -4,14 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 )
-
-var ErrActiveDialog = errors.New("active dialog")
 
 type StartMatchResponse struct {
 	Route        string `json:"route"`
