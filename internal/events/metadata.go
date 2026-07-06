@@ -14,7 +14,13 @@ type UserRegisteredMeta struct {
 }
 
 type UserProfileUpdatedMeta struct {
-	Fields []string `json:"fields"`
+	Changes []ProfileFieldChange `json:"changes"`
+}
+
+type ProfileFieldChange struct {
+	Field string `json:"field"`
+	Old   string `json:"old"`
+	New   string `json:"new"`
 }
 
 type UserDeletedMeta struct {
@@ -159,8 +165,13 @@ func validateUserRegistered(m UserRegisteredMeta) error {
 }
 
 func validateUserProfileUpdated(m UserProfileUpdatedMeta) error {
-	if len(m.Fields) == 0 {
-		return fmt.Errorf("fields required")
+	if len(m.Changes) == 0 {
+		return fmt.Errorf("changes required")
+	}
+	for _, c := range m.Changes {
+		if c.Field == "" {
+			return fmt.Errorf("field required in change")
+		}
 	}
 	return nil
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/go-telegram/bot/models"
 
 	"github.com/flykby/anonimus_chat/internal/bot/apiclient"
+	"github.com/flykby/anonimus_chat/internal/bot/edit"
 	"github.com/flykby/anonimus_chat/internal/bot/locales"
 	"github.com/flykby/anonimus_chat/internal/bot/menu"
 	"github.com/flykby/anonimus_chat/internal/bot/registration"
@@ -30,6 +31,7 @@ type App struct {
 func (a *App) Register(b *bot.Bot) {
 	b.RegisterHandler(bot.HandlerTypeMessageText, "/start", bot.MatchTypeExact, a.start)
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "reg:", bot.MatchTypePrefix, a.onRegCallback)
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "edit:", bot.MatchTypePrefix, a.onEditCallback)
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "menu:", bot.MatchTypePrefix, a.onMenuCallback)
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "end:", bot.MatchTypePrefix, a.onEndCallback)
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "p2p:", bot.MatchTypePrefix, a.onP2PCallback)
@@ -51,6 +53,10 @@ func (a *App) Default(ctx context.Context, b *bot.Bot, update *models.Update) {
 	}
 	if ok {
 		if update.Message.Text == "" {
+			return
+		}
+		if edit.IsEditState(state) {
+			a.handleEditMessage(ctx, b, update, state)
 			return
 		}
 		a.handleRegistrationMessage(ctx, b, update, state)

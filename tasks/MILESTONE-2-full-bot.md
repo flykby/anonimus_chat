@@ -14,6 +14,7 @@
 | 024 | P2P matchmaking (M+M, F+M) |
 | 025 | P2P relay & moderation |
 | 026 | Profile view |
+| 027 | Edit profile |
 | 030 | Rules page |
 | 012 | i18n RU/EN |
 | 038 | AI echo stub |
@@ -22,9 +23,8 @@
 
 | Приоритет | # | Задача | Зачем |
 |-----------|---|--------|-------|
-| 1 | 027 | Edit profile | Смена анкеты |
-| 2 | 028 | Change language | Язык UI |
-| 3 | 029 | Delete profile | Удаление + anti-abuse |
+| 1 | 028 | Change language | Язык UI |
+| 2 | 029 | Delete profile | Удаление + anti-abuse |
 
 ## Отложено (после Milestone 2)
 

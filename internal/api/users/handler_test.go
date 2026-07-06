@@ -78,3 +78,61 @@ func TestGetLanguageInvalidID(t *testing.T) {
 		t.Fatalf("status = %d, want 400", rec.Code)
 	}
 }
+
+func TestPatchProfileMissingTelegramID(t *testing.T) {
+	t.Parallel()
+
+	h := &Handler{Users: nil}
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	body, _ := json.Marshal(patchProfileRequest{Age: ptrInt16(25)})
+	req := httptest.NewRequest(http.MethodPatch, "/users/me/profile", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", rec.Code)
+	}
+}
+
+func TestPatchProfileBadAge(t *testing.T) {
+	t.Parallel()
+
+	h := &Handler{Users: nil}
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	body, _ := json.Marshal(patchProfileRequest{
+		TelegramID: 1,
+		Age:        ptrInt16(17),
+	})
+	req := httptest.NewRequest(http.MethodPatch, "/users/me/profile", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", rec.Code)
+	}
+}
+
+func TestPatchProfileNoFields(t *testing.T) {
+	t.Parallel()
+
+	h := &Handler{Users: nil}
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	body, _ := json.Marshal(patchProfileRequest{TelegramID: 1})
+	req := httptest.NewRequest(http.MethodPatch, "/users/me/profile", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", rec.Code)
+	}
+}
+
+func ptrInt16(v int16) *int16 {
+	return &v
+}

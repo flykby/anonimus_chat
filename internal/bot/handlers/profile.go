@@ -32,13 +32,14 @@ func (a *App) sendProfileView(ctx context.Context, b *bot.Bot, chatID, telegramI
 	a.sendInline(ctx, b, chatID, text, menu.ProfileViewButtons(labels, view.PremiumActive))
 }
 
-func (a *App) handleProfileCallback(ctx context.Context, b *bot.Bot, chatID int64, data string, labels menu.Labels) {
+func (a *App) handleProfileCallback(ctx context.Context, b *bot.Bot, chatID, telegramID int64, data string, labels menu.Labels, lang shared.Language) {
 	var stub string
 	switch data {
 	case menu.CBProfilePremium:
 		stub = labels.ProfilePremiumStub
 	case menu.CBProfileEdit:
-		stub = labels.ProfileEditStub
+		a.sendEditMenu(ctx, b, chatID, telegramID, lang)
+		return
 	case menu.CBProfileLanguage:
 		stub = labels.ProfileLanguageStub
 	case menu.CBProfileDelete:

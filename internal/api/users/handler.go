@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/flykby/anonimus_chat/internal/db"
 	"github.com/flykby/anonimus_chat/internal/shared"
 )
@@ -49,12 +51,20 @@ type languageResponse struct {
 	Language string `json:"language"`
 }
 
+type patchProfileRequest struct {
+	TelegramID int64   `json:"telegram_id"`
+	Age        *int16  `json:"age,omitempty"`
+	Gender     *string `json:"gender,omitempty"`
+	Seeking    *string `json:"seeking,omitempty"`
+}
+
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /users/by-telegram/{telegram_id}", h.getByTelegram)
 	mux.HandleFunc("GET /users/by-telegram/{telegram_id}/profile", h.getProfileView)
 	mux.HandleFunc("GET /users/by-telegram/{telegram_id}/language", h.getLanguage)
 	mux.HandleFunc("GET /users/me/profile", h.getProfileViewMe)
 	mux.HandleFunc("GET /users/me/language", h.getLanguageMe)
+	mux.HandleFunc("PATCH /users/me/profile", h.patchProfileMe)
 	mux.HandleFunc("POST /users/register", h.register)
 }
 
@@ -165,6 +175,77 @@ func (h *Handler) writeLanguage(w http.ResponseWriter, r *http.Request, telegram
 		return
 	}
 	writeJSON(w, http.StatusOK, languageResponse{Language: string(up.Profile.Language)})
+}
+
+func (h *Handler) patchProfileMe(w http.ResponseWriter, r *http.Request) {
+	var req patchProfileRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
+		return
+	}
+	if req.TelegramID <= 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "telegram_id required"})
+		return
+	}
+
+	patch, err := parseProfilePatch(req)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+
+	up, err := h.Users.UpdateProfile(r.Context(), req.TelegramID, patch)
+	if errors.Is(err, pgx.ErrNoRows) {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+		return
+	}
+	if errors.Is(err, db.ErrActiveDialog) {
+		writeJSON(w, http.StatusConflict, map[string]string{"error": "active_dialog"})
+		return
+	}
+	if errors.Is(err, db.ErrNoProfileChanges) {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "at least one field required"})
+		return
+	}
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+		return
+	}
+
+	premium, err := h.Users.GetPremiumStatus(r.Context(), up.User.ID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+		return
+	}
+	writeJSON(w, http.StatusOK, toProfileViewResponse(up, premium))
+}
+
+func parseProfilePatch(req patchProfileRequest) (db.UpdateProfilePatch, error) {
+	var patch db.UpdateProfilePatch
+	if req.Age != nil {
+		if *req.Age < 18 || *req.Age > 99 {
+			return patch, errors.New("age must be 18-99")
+		}
+		patch.Age = req.Age
+	}
+	if req.Gender != nil {
+		gender, err := parseGender(*req.Gender)
+		if err != nil {
+			return patch, errors.New("invalid gender")
+		}
+		patch.Gender = &gender
+	}
+	if req.Seeking != nil {
+		seeking, err := parseGender(*req.Seeking)
+		if err != nil {
+			return patch, errors.New("invalid seeking")
+		}
+		patch.Seeking = &seeking
+	}
+	if patch.Age == nil && patch.Gender == nil && patch.Seeking == nil {
+		return patch, errors.New("at least one field required")
+	}
+	return patch, nil
 }
 
 func toProfileViewResponse(up db.UserProfile, premium db.PremiumStatus) profileViewResponse {

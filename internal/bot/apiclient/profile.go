@@ -1,6 +1,7 @@
 package apiclient
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -43,6 +44,50 @@ func (c *Client) GetProfileView(ctx context.Context, telegramID int64) (ProfileV
 
 	var view ProfileView
 	if err := json.Unmarshal(body, &view); err != nil {
+		return ProfileView{}, err
+	}
+	return view, nil
+}
+
+type UpdateProfileRequest struct {
+	TelegramID int64   `json:"telegram_id"`
+	Age        *int16  `json:"age,omitempty"`
+	Gender     *string `json:"gender,omitempty"`
+	Seeking    *string `json:"seeking,omitempty"`
+}
+
+func (c *Client) UpdateProfile(ctx context.Context, req UpdateProfileRequest) (ProfileView, error) {
+	body, err := json.Marshal(req)
+	if err != nil {
+		return ProfileView{}, err
+	}
+
+	url := c.BaseURL + "/users/me/profile"
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewReader(body))
+	if err != nil {
+		return ProfileView{}, err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return ProfileView{}, err
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+	if resp.StatusCode == http.StatusConflict {
+		return ProfileView{}, ErrActiveDialog
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		return ProfileView{}, ErrNotRegistered
+	}
+	if resp.StatusCode != http.StatusOK {
+		return ProfileView{}, fmt.Errorf("api update profile: status %d: %s", resp.StatusCode, strings.TrimSpace(string(respBody)))
+	}
+
+	var view ProfileView
+	if err := json.Unmarshal(respBody, &view); err != nil {
 		return ProfileView{}, err
 	}
 	return view, nil

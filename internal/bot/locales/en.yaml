@@ -55,6 +55,14 @@ profile:
   delete: "Delete profile"
   premium_stub: "Premium purchase is coming soon."
   edit_stub: "Profile editing is coming soon."
+  edit_flow:
+    menu_title: "What would you like to change?"
+    button_age: "Age"
+    button_gender: "Gender"
+    button_seeking: "Looking for"
+    updated: "Profile updated."
+    save_error: "Could not save changes. Please try again later."
+    active_dialog: "End the current chat before changing gender or who you are looking for."
   language_stub: "Language change is coming soon."
   delete_stub: "Profile deletion is coming soon."
   view:

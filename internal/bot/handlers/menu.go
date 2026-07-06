@@ -69,7 +69,8 @@ func (a *App) onMenuCallback(ctx context.Context, b *bot.Bot, update *models.Upd
 			return
 		}
 		labels := menu.LabelsFor(menu.ParseLanguage(profile.Language))
-		a.handleProfileCallback(ctx, b, msg.Chat.ID, data, labels)
+		lang := menu.ParseLanguage(profile.Language)
+		a.handleProfileCallback(ctx, b, msg.Chat.ID, telegramID, data, labels, lang)
 	}
 }
 

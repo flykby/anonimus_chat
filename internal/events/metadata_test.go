@@ -39,6 +39,22 @@ func TestValidateUserRegisteredMeta(t *testing.T) {
 	}
 }
 
+func TestValidateUserProfileUpdatedMeta(t *testing.T) {
+	t.Parallel()
+
+	if err := validateMetadata(TypeUserProfileUpdated, UserProfileUpdatedMeta{
+		Changes: []ProfileFieldChange{
+			{Field: "age", Old: "25", New: "26"},
+		},
+	}); err != nil {
+		t.Fatalf("valid metadata: %v", err)
+	}
+
+	if err := validateMetadata(TypeUserProfileUpdated, UserProfileUpdatedMeta{}); err == nil {
+		t.Fatal("expected error for empty changes")
+	}
+}
+
 func TestValidateDialogStartedMeta(t *testing.T) {
 	t.Parallel()
 
