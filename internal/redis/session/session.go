@@ -95,15 +95,15 @@ func (s *Store) Delete(ctx context.Context, userID int64) error {
 }
 
 // SetP2PPair creates mirrored sessions for both users in a P2P match.
-func (s *Store) SetP2PPair(ctx context.Context, userA, userB, dialogID int64, startedAt time.Time) error {
+func (s *Store) SetP2PPair(ctx context.Context, userA, userB, dialogAID, dialogBID int64, startedAt time.Time) error {
 	sessA := ActiveSession{
-		DialogID:  dialogID,
+		DialogID:  dialogAID,
 		Type:      shared.DialogTypeP2P,
 		PartnerID: userB,
 		StartedAt: startedAt,
 	}
 	sessB := ActiveSession{
-		DialogID:  dialogID,
+		DialogID:  dialogBID,
 		Type:      shared.DialogTypeP2P,
 		PartnerID: userA,
 		StartedAt: startedAt,

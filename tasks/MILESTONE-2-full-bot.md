@@ -11,20 +11,20 @@
 | 005–008 | Infra, events |
 | 010–011 | Регистрация, главное меню |
 | 013–015 | Match routing, queue UX, end dialog |
+| 024 | P2P matchmaking (M+M, F+M) |
 | 038 | AI echo stub |
 
 ## Очередь (делаем дальше)
 
 | Приоритет | # | Задача | Зачем |
 |-----------|---|--------|-------|
-| 1 | 024 | P2P matchmaking | M+M и F+M — реальный живой матч |
-| 2 | 025 | P2P relay | Переписка между собеседниками |
-| 3 | 026 | Profile view | Вместо stub в меню «Профиль» |
-| 4 | 030 | Rules page | Вместо stub в меню «Правила» |
-| 5 | 012 | i18n RU/EN | Все строки в locale-файлах |
-| 6 | 027 | Edit profile | Смена анкеты |
-| 7 | 028 | Change language | Язык UI |
-| 8 | 029 | Delete profile | Удаление + anti-abuse |
+| 1 | 025 | P2P relay | Переписка между собеседниками |
+| 2 | 026 | Profile view | Вместо stub в меню «Профиль» |
+| 3 | 030 | Rules page | Вместо stub в меню «Правила» |
+| 4 | 012 | i18n RU/EN | Все строки в locale-файлах |
+| 5 | 027 | Edit profile | Смена анкеты |
+| 6 | 028 | Change language | Язык UI |
+| 7 | 029 | Delete profile | Удаление + anti-abuse |
 
 ## Отложено (после Milestone 2)
 

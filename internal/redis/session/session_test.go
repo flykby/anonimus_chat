@@ -51,16 +51,16 @@ func TestSetP2PPair(t *testing.T) {
 	ctx := context.Background()
 
 	started := time.Now().UTC()
-	if err := store.SetP2PPair(ctx, 1, 2, 50, started); err != nil {
+	if err := store.SetP2PPair(ctx, 1, 2, 50, 51, started); err != nil {
 		t.Fatalf("set pair: %v", err)
 	}
 
 	a, ok, _ := store.Get(ctx, 1)
-	if !ok || a.PartnerID != 2 || a.Type != shared.DialogTypeP2P {
+	if !ok || a.PartnerID != 2 || a.Type != shared.DialogTypeP2P || a.DialogID != 50 {
 		t.Fatalf("user 1 session = %+v ok=%v", a, ok)
 	}
 	b, ok, _ := store.Get(ctx, 2)
-	if !ok || b.PartnerID != 1 {
+	if !ok || b.PartnerID != 1 || b.DialogID != 51 {
 		t.Fatalf("user 2 session = %+v ok=%v", b, ok)
 	}
 }

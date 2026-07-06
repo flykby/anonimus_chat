@@ -24,6 +24,7 @@ type completeRequest struct {
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /match/start", h.start)
 	mux.HandleFunc("POST /match/complete", h.complete)
+	mux.HandleFunc("POST /match/poll", h.poll)
 	mux.HandleFunc("POST /match/cancel", h.cancel)
 }
 
@@ -58,6 +59,21 @@ func (h *Handler) complete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Match.CompleteAI(r.Context(), req.TelegramID, req.WaitSec)
+	writeStartResponse(w, resp, err)
+}
+
+func (h *Handler) poll(w http.ResponseWriter, r *http.Request) {
+	var req telegramRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
+		return
+	}
+	if req.TelegramID <= 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "telegram_id required"})
+		return
+	}
+
+	resp, err := h.Match.Poll(r.Context(), req.TelegramID)
 	writeStartResponse(w, resp, err)
 }
 
@@ -99,6 +115,10 @@ func writeStartResponse(w http.ResponseWriter, resp match.StartResponse, err err
 	}
 	if errors.Is(err, match.ErrQueueUnavailable) {
 		writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "queue_unavailable"})
+		return
+	}
+	if errors.Is(err, match.ErrNotInQueue) {
+		writeJSON(w, http.StatusConflict, map[string]string{"error": "not_in_queue"})
 		return
 	}
 	if err != nil {

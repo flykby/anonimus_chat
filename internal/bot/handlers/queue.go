@@ -36,6 +36,8 @@ func (a *App) handleStartChat(ctx context.Context, b *bot.Bot, chatID, telegramI
 	}
 
 	switch result.Status {
+	case "matched":
+		a.sendReply(ctx, b, chatID, labels.QueueMatched, menu.DialogKeyboard(labels))
 	case "searching", "queued":
 		count := queueDisplayCount(result)
 		gender := shared.Gender(profile.Gender)
@@ -116,6 +118,19 @@ func (a *App) runP2PQueueWait(ctx context.Context, b *bot.Bot, chatID, telegramI
 			if !timedOut && time.Now().After(timeoutAt) {
 				timedOut = true
 				a.sendReply(ctx, b, chatID, labels.QueueTimeout, menu.QueueWaitingKeyboard(labels))
+			}
+
+			result, err := a.API.PollMatch(ctx, telegramID)
+			if errors.Is(err, context.Canceled) || ctx.Err() != nil {
+				return
+			}
+			if err != nil {
+				a.Logger.Warn("poll match failed", "err", err, "user_id", telegramID)
+				continue
+			}
+			if result.Status == "matched" {
+				a.sendReply(ctx, b, chatID, labels.QueueMatched, menu.DialogKeyboard(labels))
+				return
 			}
 		}
 	}

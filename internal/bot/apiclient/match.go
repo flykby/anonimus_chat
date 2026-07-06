@@ -33,6 +33,10 @@ func (c *Client) CompleteMatch(ctx context.Context, telegramID int64, waitSec in
 	})
 }
 
+func (c *Client) PollMatch(ctx context.Context, telegramID int64) (StartMatchResponse, error) {
+	return c.postMatch(ctx, "/match/poll", map[string]any{"telegram_id": telegramID})
+}
+
 func (c *Client) CancelMatch(ctx context.Context, telegramID int64) error {
 	body, err := json.Marshal(map[string]int64{"telegram_id": telegramID})
 	if err != nil {

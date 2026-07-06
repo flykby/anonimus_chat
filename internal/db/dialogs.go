@@ -47,6 +47,27 @@ func (r *DialogsRepo) CreateAI(ctx context.Context, db events.DBTX, userID int64
 	return dialogID, nil
 }
 
+func (r *DialogsRepo) CreateP2P(ctx context.Context, db events.DBTX, userA, userB int64) (dialogAID, dialogBID int64, err error) {
+	err = db.QueryRow(ctx, `
+		INSERT INTO dialogs (user_id, type, partner_user_id)
+		VALUES ($1, $2, $3)
+		RETURNING id
+	`, userA, shared.DialogTypeP2P, userB).Scan(&dialogAID)
+	if err != nil {
+		return 0, 0, fmt.Errorf("insert p2p dialog for user a: %w", err)
+	}
+
+	err = db.QueryRow(ctx, `
+		INSERT INTO dialogs (user_id, type, partner_user_id)
+		VALUES ($1, $2, $3)
+		RETURNING id
+	`, userB, shared.DialogTypeP2P, userA).Scan(&dialogBID)
+	if err != nil {
+		return 0, 0, fmt.Errorf("insert p2p dialog for user b: %w", err)
+	}
+	return dialogAID, dialogBID, nil
+}
+
 func (r *DialogsRepo) GetActiveByUserID(ctx context.Context, userID int64) (DialogRow, bool, error) {
 	return r.scanDialog(r.pool.QueryRow(ctx, `
 		SELECT id, user_id, type, persona_id, partner_user_id, started_at, ended_at, end_reason

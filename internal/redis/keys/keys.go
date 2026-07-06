@@ -12,6 +12,10 @@ func P2PQueue(gender shared.Gender) string {
 	return fmt.Sprintf("%s:queue:p2p:%s", Prefix, gender)
 }
 
+func HeteroQueue(gender shared.Gender) string {
+	return fmt.Sprintf("%s:queue:hetero:%s", Prefix, gender)
+}
+
 func Session(userID int64) string {
 	return fmt.Sprintf("%s:session:%d", Prefix, userID)
 }

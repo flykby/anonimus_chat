@@ -91,3 +91,62 @@ func TestEnqueueOrderingByTime(t *testing.T) {
 		t.Fatalf("pair order = %v", pair)
 	}
 }
+
+func TestHeteroMatchPair(t *testing.T) {
+	_, client := redistest.NewTestClient(t)
+	store := matchqueue.New(client)
+	ctx := context.Background()
+
+	if err := store.EnqueueHetero(ctx, shared.GenderFemale, 11); err != nil {
+		t.Fatalf("enqueue female: %v", err)
+	}
+	if err := store.EnqueueHetero(ctx, shared.GenderMale, 22); err != nil {
+		t.Fatalf("enqueue male: %v", err)
+	}
+
+	pair, ok, err := store.TryMatchHeteroPair(ctx)
+	if err != nil {
+		t.Fatalf("match: %v", err)
+	}
+	if !ok {
+		t.Fatal("expected hetero match")
+	}
+	if pair[0] != 11 || pair[1] != 22 {
+		t.Fatalf("pair = %v", pair)
+	}
+}
+
+func TestHeteroMatchRequiresBothQueues(t *testing.T) {
+	_, client := redistest.NewTestClient(t)
+	store := matchqueue.New(client)
+	ctx := context.Background()
+
+	if err := store.EnqueueHetero(ctx, shared.GenderFemale, 5); err != nil {
+		t.Fatalf("enqueue: %v", err)
+	}
+
+	_, ok, err := store.TryMatchHeteroPair(ctx)
+	if err != nil {
+		t.Fatalf("match: %v", err)
+	}
+	if ok {
+		t.Fatal("expected no match with only female queue")
+	}
+}
+
+func TestLeaveHeteroQueue(t *testing.T) {
+	_, client := redistest.NewTestClient(t)
+	store := matchqueue.New(client)
+	ctx := context.Background()
+
+	_ = store.EnqueueHetero(ctx, shared.GenderFemale, 7)
+	_ = store.LeaveHetero(ctx, shared.GenderFemale, 7)
+
+	size, err := store.HeteroQueueSize(ctx, shared.GenderFemale)
+	if err != nil {
+		t.Fatalf("size: %v", err)
+	}
+	if size != 0 {
+		t.Fatalf("size = %d", size)
+	}
+}

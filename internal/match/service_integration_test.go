@@ -9,15 +9,19 @@ import (
 	"github.com/flykby/anonimus_chat/internal/db"
 	"github.com/flykby/anonimus_chat/internal/events"
 	"github.com/flykby/anonimus_chat/internal/match"
+	redistest "github.com/flykby/anonimus_chat/internal/redis/redistest"
+	"github.com/flykby/anonimus_chat/internal/redis/matchqueue"
+	"github.com/flykby/anonimus_chat/internal/redis/session"
 	"github.com/flykby/anonimus_chat/internal/shared"
 )
 
-func TestIntegrationStartAIRoute(t *testing.T) {
+func TestIntegrationP2PMatchMalePair(t *testing.T) {
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
 		t.Skip("DATABASE_URL not set")
 	}
 
+	_, rdb := redistest.NewTestClient(t)
 	ctx := context.Background()
 	pool, err := db.Open(ctx, databaseURL)
 	if err != nil {
@@ -28,48 +32,84 @@ func TestIntegrationStartAIRoute(t *testing.T) {
 	emitter := events.NewEmitter(nil)
 	users := db.NewUsersRepo(pool, emitter)
 	dialogs := db.NewDialogsRepo(pool)
-	svc := match.NewService(pool, users, dialogs, nil, emitter, nil)
+	queue := matchqueue.New(rdb)
+	sessions := session.New(rdb)
+	svc := match.NewService(pool, users, dialogs, queue, emitter, sessions)
 
-	telegramID := time.Now().UnixNano()
-	up, err := users.Register(ctx, db.RegisterInput{
-		TelegramID: telegramID,
+	tgA := time.Now().UnixNano()
+	tgB := tgA + 1
+	upA, err := users.Register(ctx, db.RegisterInput{
+		TelegramID: tgA,
 		Age:        25,
 		Gender:     shared.GenderMale,
-		Seeking:    shared.GenderFemale,
+		Seeking:    shared.GenderMale,
 		Language:   shared.LanguageRU,
 	})
 	if err != nil {
-		t.Fatalf("Register(): %v", err)
+		t.Fatalf("register A: %v", err)
 	}
-
-	searching, err := svc.Start(ctx, telegramID)
+	upB, err := users.Register(ctx, db.RegisterInput{
+		TelegramID: tgB,
+		Age:        26,
+		Gender:     shared.GenderMale,
+		Seeking:    shared.GenderMale,
+		Language:   shared.LanguageRU,
+	})
 	if err != nil {
-		t.Fatalf("Start(): %v", err)
-	}
-	if searching.Route != "ai" || searching.Status != "searching" || searching.DisplayCount == nil {
-		t.Fatalf("unexpected searching response: %+v", searching)
+		t.Fatalf("register B: %v", err)
 	}
 
-	matched, err := svc.CompleteAI(ctx, telegramID, 3)
+	first, err := svc.Start(ctx, tgA)
 	if err != nil {
-		t.Fatalf("CompleteAI(): %v", err)
+		t.Fatalf("Start A: %v", err)
 	}
-	if matched.Status != "matched" || matched.DialogID == nil {
-		t.Fatalf("unexpected matched response: %+v", matched)
+	if first.Status != "queued" {
+		t.Fatalf("first start status = %q", first.Status)
 	}
 
-	active, err := users.HasActiveDialog(ctx, up.User.ID)
-	if err != nil || !active {
-		t.Fatalf("expected active dialog for user %d", up.User.ID)
+	second, err := svc.Start(ctx, tgB)
+	if err != nil {
+		t.Fatalf("Start B: %v", err)
+	}
+	if second.Status != "matched" || second.DialogID == nil {
+		t.Fatalf("second start = %+v, want matched", second)
+	}
+
+	polled, err := svc.Poll(ctx, tgA)
+	if err != nil {
+		t.Fatalf("Poll A: %v", err)
+	}
+	if polled.Status != "matched" || polled.DialogID == nil {
+		t.Fatalf("poll A = %+v, want matched", polled)
+	}
+
+	for _, userID := range []int64{upA.User.ID, upB.User.ID} {
+		active, err := users.HasActiveDialog(ctx, userID)
+		if err != nil || !active {
+			t.Fatalf("user %d expected active dialog", userID)
+		}
+	}
+
+	sessA, ok, err := sessions.Get(ctx, upA.User.ID)
+	if err != nil || !ok || sessA.PartnerID != upB.User.ID {
+		t.Fatalf("session A = %+v ok=%v err=%v", sessA, ok, err)
+	}
+	sessB, ok, err := sessions.Get(ctx, upB.User.ID)
+	if err != nil || !ok || sessB.PartnerID != upA.User.ID {
+		t.Fatalf("session B = %+v ok=%v err=%v", sessB, ok, err)
+	}
+	if sessA.DialogID == sessB.DialogID {
+		t.Fatalf("expected distinct dialog ids, got %d and %d", sessA.DialogID, sessB.DialogID)
 	}
 }
 
-func TestIntegrationStartRejectsActiveDialog(t *testing.T) {
+func TestIntegrationP2PMatchHeteroPair(t *testing.T) {
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
 		t.Skip("DATABASE_URL not set")
 	}
 
+	_, rdb := redistest.NewTestClient(t)
 	ctx := context.Background()
 	pool, err := db.Open(ctx, databaseURL)
 	if err != nil {
@@ -80,32 +120,106 @@ func TestIntegrationStartRejectsActiveDialog(t *testing.T) {
 	emitter := events.NewEmitter(nil)
 	users := db.NewUsersRepo(pool, emitter)
 	dialogs := db.NewDialogsRepo(pool)
-	svc := match.NewService(pool, users, dialogs, nil, emitter, nil)
+	queue := matchqueue.New(rdb)
+	sessions := session.New(rdb)
+	svc := match.NewService(pool, users, dialogs, queue, emitter, sessions)
 
-	telegramID := time.Now().UnixNano() + 1
-	up, err := users.Register(ctx, db.RegisterInput{
-		TelegramID: telegramID,
-		Age:        30,
+	tgF := time.Now().UnixNano() + 100
+	tgM := tgF + 1
+	upF, err := users.Register(ctx, db.RegisterInput{
+		TelegramID: tgF,
+		Age:        24,
 		Gender:     shared.GenderFemale,
+		Seeking:    shared.GenderMale,
+		Language:   shared.LanguageEN,
+	})
+	if err != nil {
+		t.Fatalf("register F: %v", err)
+	}
+	upM, err := users.Register(ctx, db.RegisterInput{
+		TelegramID: tgM,
+		Age:        27,
+		Gender:     shared.GenderMale,
 		Seeking:    shared.GenderFemale,
 		Language:   shared.LanguageEN,
 	})
 	if err != nil {
-		t.Fatalf("Register(): %v", err)
+		t.Fatalf("register M: %v", err)
 	}
 
-	if _, err := svc.Start(ctx, telegramID); err != nil {
-		t.Fatalf("first Start(): %v", err)
-	}
-	if _, err := svc.CompleteAI(ctx, telegramID, 2); err != nil {
-		t.Fatalf("CompleteAI(): %v", err)
-	}
-	if _, err := svc.Start(ctx, telegramID); err != match.ErrActiveDialog {
-		t.Fatalf("second Start() err = %v, want ErrActiveDialog", err)
+	if err := queue.EnqueueHetero(ctx, shared.GenderMale, upM.User.ID); err != nil {
+		t.Fatalf("enqueue hetero male: %v", err)
 	}
 
-	active, err := users.HasActiveDialog(ctx, up.User.ID)
-	if err != nil || !active {
-		t.Fatalf("expected active dialog for user %d", up.User.ID)
+	queued, err := svc.Start(ctx, tgF)
+	if err != nil {
+		t.Fatalf("Start F: %v", err)
+	}
+	if queued.Status != "matched" || queued.DialogID == nil {
+		t.Fatalf("start F = %+v, want matched", queued)
+	}
+
+	for _, userID := range []int64{upF.User.ID, upM.User.ID} {
+		active, err := users.HasActiveDialog(ctx, userID)
+		if err != nil || !active {
+			t.Fatalf("user %d expected active dialog", userID)
+		}
+	}
+
+	sessF, ok, err := sessions.Get(ctx, upF.User.ID)
+	if err != nil || !ok || sessF.PartnerID != upM.User.ID {
+		t.Fatalf("session F = %+v ok=%v err=%v", sessF, ok, err)
+	}
+}
+
+func TestIntegrationP2PCancelLeavesQueue(t *testing.T) {
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("DATABASE_URL not set")
+	}
+
+	_, rdb := redistest.NewTestClient(t)
+	ctx := context.Background()
+	pool, err := db.Open(ctx, databaseURL)
+	if err != nil {
+		t.Fatalf("Open(): %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	emitter := events.NewEmitter(nil)
+	users := db.NewUsersRepo(pool, emitter)
+	dialogs := db.NewDialogsRepo(pool)
+	queue := matchqueue.New(rdb)
+	svc := match.NewService(pool, users, dialogs, queue, emitter, nil)
+
+	tg := time.Now().UnixNano() + 200
+	up, err := users.Register(ctx, db.RegisterInput{
+		TelegramID: tg,
+		Age:        28,
+		Gender:     shared.GenderFemale,
+		Seeking:    shared.GenderMale,
+		Language:   shared.LanguageRU,
+	})
+	if err != nil {
+		t.Fatalf("register: %v", err)
+	}
+
+	if _, err := svc.Start(ctx, tg); err != nil {
+		t.Fatalf("Start(): %v", err)
+	}
+	if err := svc.Cancel(ctx, tg); err != nil {
+		t.Fatalf("Cancel(): %v", err)
+	}
+
+	inQueue, err := queue.IsInHeteroQueue(ctx, shared.GenderFemale, up.User.ID)
+	if err != nil {
+		t.Fatalf("IsInHeteroQueue: %v", err)
+	}
+	if inQueue {
+		t.Fatal("expected user removed from hetero queue")
+	}
+
+	if _, err := svc.Poll(ctx, tg); err != match.ErrNotInQueue {
+		t.Fatalf("Poll() err = %v, want ErrNotInQueue", err)
 	}
 }
