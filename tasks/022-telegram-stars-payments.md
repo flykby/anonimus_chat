@@ -1,6 +1,6 @@
 # 022. Telegram Stars payments
 
-**Статус:** todo  
+**Статус:** done  
 **Фаза:** monetization  
 **Зависимости:** 009, 021
 

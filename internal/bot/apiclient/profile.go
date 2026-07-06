@@ -93,3 +93,61 @@ func (c *Client) UpdateProfile(ctx context.Context, req UpdateProfileRequest) (P
 	}
 	return view, nil
 }
+
+type PurchasePremiumRequest struct {
+	TelegramID       int64  `json:"telegram_id"`
+	AmountStars      int    `json:"amount_stars"`
+	DurationDays     int    `json:"duration_days"`
+	TelegramChargeID string `json:"telegram_charge_id"`
+	ProviderChargeID string `json:"provider_charge_id"`
+}
+
+type PurchasePremiumResult struct {
+	Status    string    `json:"status"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
+func (c *Client) PurchasePremium(ctx context.Context, telegramID int64, amountStars, durationDays int, telegramChargeID, providerChargeID string) (PurchasePremiumResult, error) {
+	reqBody := PurchasePremiumRequest{
+		TelegramID:       telegramID,
+		AmountStars:      amountStars,
+		DurationDays:     durationDays,
+		TelegramChargeID: telegramChargeID,
+		ProviderChargeID: providerChargeID,
+	}
+
+	body, err := json.Marshal(reqBody)
+	if err != nil {
+		return PurchasePremiumResult{}, err
+	}
+
+	url := c.BaseURL + "/users/me/premium/purchase"
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return PurchasePremiumResult{}, err
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.HTTPClient.Do(httpReq)
+	if err != nil {
+		return PurchasePremiumResult{}, err
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+	if resp.StatusCode == http.StatusConflict {
+		return PurchasePremiumResult{}, ErrPaymentAlreadyProcessed
+	}
+	if resp.StatusCode == http.StatusNotFound {
+		return PurchasePremiumResult{}, ErrNotRegistered
+	}
+	if resp.StatusCode != http.StatusOK {
+		return PurchasePremiumResult{}, fmt.Errorf("api purchase premium: status %d: %s", resp.StatusCode, strings.TrimSpace(string(respBody)))
+	}
+
+	var result PurchasePremiumResult
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return PurchasePremiumResult{}, err
+	}
+	return result, nil
+}

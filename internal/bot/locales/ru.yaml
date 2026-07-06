@@ -126,3 +126,14 @@ language:
   en: "English"
   code_ru: "RU"
   code_en: "EN"
+
+premium:
+  benefits: "✨ <b>Premium-подписка</b>\n\n🔓 Adult-контент без blur в AI-диалогах\n⏱ Срок действия: {days} дней\n\n💫 Стоимость: {price} ⭐"
+  active_status: "✨ <b>Premium активен</b>\n\nДействует до: {date} UTC+0\n\n🔄 Продлить ещё на {days} дней за {price} ⭐"
+  invoice:
+    title: "Premium-подписка"
+    description: "Доступ к adult-контенту без blur на {days} дней"
+    error: "Не удалось создать счёт. Попробуй позже."
+  purchase:
+    success: "✅ Premium активирован!\n\nДействует до: {date} UTC+0"
+    error: "Не удалось активировать premium. Обратись в поддержку."

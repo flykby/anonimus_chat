@@ -24,6 +24,7 @@ const (
 	CBProfileEdit     = "menu:profile:edit"
 	CBProfileLanguage = "menu:profile:language"
 	CBProfileDelete   = "menu:profile:delete"
+	CBPremiumBuy      = "premium:buy"
 )
 
 type Action int

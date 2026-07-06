@@ -12,7 +12,11 @@ import (
 	"time"
 )
 
-var ErrNotRegistered = errors.New("user not registered")
+var (
+	ErrNotRegistered           = errors.New("user not registered")
+	ErrActiveDialog            = errors.New("active dialog exists")
+	ErrPaymentAlreadyProcessed = errors.New("payment already processed")
+)
 
 type Client struct {
 	BaseURL    string

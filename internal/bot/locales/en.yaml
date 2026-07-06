@@ -126,3 +126,14 @@ language:
   en: "English"
   code_ru: "RU"
   code_en: "EN"
+
+premium:
+  benefits: "✨ <b>Premium subscription</b>\n\n🔓 Adult content without blur in AI chats\n⏱ Duration: {days} days\n\n💫 Price: {price} ⭐"
+  active_status: "✨ <b>Premium active</b>\n\nValid until: {date} UTC+0\n\n🔄 Extend for {days} more days for {price} ⭐"
+  invoice:
+    title: "Premium subscription"
+    description: "Access to adult content without blur for {days} days"
+    error: "Could not create invoice. Please try again later."
+  purchase:
+    success: "✅ Premium activated!\n\nValid until: {date} UTC+0"
+    error: "Could not activate premium. Please contact support."

@@ -64,3 +64,15 @@ func Int64(key string, fallback int64) int64 {
 	}
 	return v
 }
+
+func Int(key string, fallback int) int {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return fallback
+	}
+	v, err := strconv.Atoi(raw)
+	if err != nil {
+		return fallback
+	}
+	return v
+}
