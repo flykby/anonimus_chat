@@ -12,9 +12,9 @@ registration:
     lang_ru: "Russian"
     lang_en: "English"
   age:
-    prompt: "How old are you?\n\nEnter a number from 18 to 99."
-    too_young: "Sorry, the service is available from age 18 only."
-    invalid: "Enter your age as a number from 18 to 99."
+    prompt: "How old are you?\n\n(Minimum registration age is 18)"
+    too_young: "Sorry, the service is available from age 18 only"
+    invalid: "Enter your age as a number"
   gender:
     prompt: "Your gender:"
   seeking:
@@ -33,7 +33,7 @@ common:
   service_unavailable: "Service is temporarily unavailable. Please try again later."
 
 menu:
-  title: "Main menu"
+  title: "Your profile is active. Tap Find a partner to start chatting"
   start_chat: "Start chat"
   profile: "Profile"
   rules: "Rules"

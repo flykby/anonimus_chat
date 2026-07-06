@@ -12,7 +12,7 @@ func TestTRussianMenuTitle(t *testing.T) {
 	t.Parallel()
 
 	got := locales.T("menu.title", shared.LanguageRU, nil)
-	if got != "Главное меню" {
+	if got != "Ваша анкета активна. Нажмите Найти собеседника, чтобы начать общение" {
 		t.Fatalf("got %q", got)
 	}
 }
@@ -21,7 +21,7 @@ func TestTEnglishMenuTitle(t *testing.T) {
 	t.Parallel()
 
 	got := locales.T("menu.title", shared.LanguageEN, nil)
-	if got != "Main menu" {
+	if got != "Your profile is active. Tap Find a partner to start chatting" {
 		t.Fatalf("got %q", got)
 	}
 }
