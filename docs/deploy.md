@@ -154,16 +154,52 @@ bash scripts/deploy.sh --tag <previous-sha>
 Previous tag is stored in `.deploy/previous` after each successful deploy.  
 Previous schema version — in `.deploy/migration_previous`.
 
-## HTTPS reverse proxy (stub for task 009)
+## Webhook mode (optional)
 
-Optional Caddy profile for TLS termination:
+By default, the bot uses **long polling**. For production with payments, **webhook mode** is recommended — Telegram will retry failed deliveries.
+
+### Option 1: Self-signed certificate with IP address
+
+Generate certificate for your server IP:
 
 ```bash
-# Set DOMAIN=bot.example.com in .env
-bash scripts/deploy.sh --with-proxy
+./scripts/gen-webhook-cert.sh YOUR_SERVER_IP ./certs
 ```
 
-Caddy config: `deploy/caddy/Caddyfile`. Full webhook routing — task 009.
+Add to `.env`:
+
+```env
+WEBHOOK_URL=https://YOUR_SERVER_IP:8443/telegram/webhook
+WEBHOOK_SECRET=your-random-secret-here
+WEBHOOK_CERT_PATH=./certs/webhook.pem
+WEBHOOK_KEY_PATH=./certs/webhook.key
+```
+
+Update `docker-compose.prod.yml` to expose port 8443:
+
+```yaml
+bot:
+  ports:
+    - "8443:8443"
+```
+
+### Option 2: Domain with reverse proxy
+
+With a domain and Caddy/nginx for TLS termination:
+
+```env
+WEBHOOK_URL=https://bot.example.com/telegram/webhook
+WEBHOOK_SECRET=your-random-secret-here
+# No cert paths needed — proxy handles TLS
+```
+
+### Switching back to polling
+
+Remove or clear `WEBHOOK_URL` from `.env` — the bot will use long polling.
+
+### Telegram webhook ports
+
+Telegram only accepts webhooks on ports: **443, 80, 88, 8443**
 
 ## Systemd (optional)
 

@@ -25,6 +25,10 @@ type Config struct {
 	HealthOnly          bool
 	PremiumPriceStars   int
 	PremiumDurationDays int
+	WebhookURL          string
+	WebhookSecret       string
+	WebhookCertPath     string
+	WebhookKeyPath      string
 }
 
 func Load() Config {
@@ -38,7 +42,15 @@ func Load() Config {
 		HealthOnly:          env.Bool("BOT_HEALTH_ONLY"),
 		PremiumPriceStars:   env.Int("PREMIUM_PRICE_STARS", 200),
 		PremiumDurationDays: env.Int("PREMIUM_DURATION_DAYS", 30),
+		WebhookURL:          env.Get("WEBHOOK_URL", ""),
+		WebhookSecret:       env.Get("WEBHOOK_SECRET", ""),
+		WebhookCertPath:     env.Get("WEBHOOK_CERT_PATH", ""),
+		WebhookKeyPath:      env.Get("WEBHOOK_KEY_PATH", ""),
 	}
+}
+
+func (c Config) UseWebhook() bool {
+	return c.WebhookURL != ""
 }
 
 func (c Config) Validate() error {
