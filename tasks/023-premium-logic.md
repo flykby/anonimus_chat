@@ -28,7 +28,8 @@
 
 - Одна запись per user в `premium_subscriptions`, update expires_at
 - UTC+0 в отображении — явно указать timezone в формате
-- Premium не влияет на P2P
+- Premium не влияет на обычный P2P (M+M, F+M без дефицита)
+- Premium **приоритет на live F** при M→F — задача [037](037-live-f-priority.md)
 - Не откатывать premium при soft-delete (правила в 026)
 
 ## Out of scope
