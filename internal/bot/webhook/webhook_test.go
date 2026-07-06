@@ -21,12 +21,12 @@ func TestHandlerProcessesWithIndependentContext(t *testing.T) {
 	tg, err := bot.New("123:ABC",
 		bot.WithSkipGetMe(),
 		bot.WithDefaultHandler(func(ctx context.Context, b *bot.Bot, update *models.Update) {
-		time.Sleep(20 * time.Millisecond)
-		if ctx.Err() != nil {
-			t.Errorf("handler context canceled: %v", ctx.Err())
-		}
-		close(done)
-	}))
+			time.Sleep(20 * time.Millisecond)
+			if ctx.Err() != nil {
+				t.Errorf("handler context canceled: %v", ctx.Err())
+			}
+			close(done)
+		}))
 	if err != nil {
 		t.Fatal(err)
 	}
