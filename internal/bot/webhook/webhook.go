@@ -88,7 +88,10 @@ func (w *Webhook) Handler(rw http.ResponseWriter, r *http.Request) {
 
 	w.logger.Debug("webhook update received", "update_id", update.ID)
 
-	w.bot.ProcessUpdate(r.Context(), &update)
+	// ProcessUpdate runs handlers in a goroutine; r.Context() is canceled once the
+	// HTTP response is sent, so handlers must not inherit the request context.
+	upd := update
+	go w.bot.ProcessUpdate(context.Background(), &upd)
 
 	rw.WriteHeader(http.StatusOK)
 }
