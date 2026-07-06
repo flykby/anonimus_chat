@@ -198,7 +198,7 @@ scripts/deploy.sh            — prod deploy + migrate
 | Фото + Stars | 020–023, 031 | Каталог, blur, оплата, premium UI |
 | Delete unlock UI | часть 029 + 021 | Бесплатный unlock adult-фото |
 | Live F priority | 037 | Приоритет живых F в очереди M→F |
-| Webhook | 009 | Long polling достаточно |
+| Webhook | 009 | ✅ Реализован, использовать по желанию |
 | Ops/Launch | 032–035 | Personas, метрики, launch checklist |
 
 ---

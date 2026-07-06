@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	"github.com/flykby/anonimus_chat/internal/bot/apiclient"
 	"github.com/flykby/anonimus_chat/internal/bot/config"
 	"github.com/flykby/anonimus_chat/internal/bot/handlers"
+	"github.com/flykby/anonimus_chat/internal/bot/webhook"
 	iredis "github.com/flykby/anonimus_chat/internal/redis"
 	"github.com/flykby/anonimus_chat/internal/redis/fsm"
 	"github.com/flykby/anonimus_chat/internal/redis/navscreen"
@@ -109,6 +111,14 @@ func runTelegramBot(ctx context.Context, logger *slog.Logger, cfg config.Config)
 		os.Exit(1)
 	}
 
+	if cfg.UseWebhook() {
+		runWebhookMode(ctx, logger, cfg, tg)
+	} else {
+		runPollingMode(ctx, logger, tg)
+	}
+}
+
+func runPollingMode(ctx context.Context, logger *slog.Logger, tg *bot.Bot) {
 	go func() {
 		logger.Info("telegram long polling started")
 		tg.Start(ctx)
@@ -116,6 +126,51 @@ func runTelegramBot(ctx context.Context, logger *slog.Logger, cfg config.Config)
 
 	logger.Info("bot ready", "mode", "long_polling")
 	<-ctx.Done()
+}
+
+func runWebhookMode(ctx context.Context, logger *slog.Logger, cfg config.Config, tg *bot.Bot) {
+	wh := webhook.New(tg, cfg.WebhookSecret, logger)
+
+	if err := wh.Register(ctx, cfg.WebhookURL, cfg.WebhookCertPath); err != nil {
+		logger.Error("failed to register webhook", "err", err)
+		os.Exit(1)
+	}
+	logger.Info("webhook registered", "url", cfg.WebhookURL)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /health", healthHandler)
+	mux.HandleFunc("POST /telegram/webhook", wh.Handler)
+
+	srv := &http.Server{
+		Addr:              cfg.HTTPAddr,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+
+	go func() {
+		var err error
+		if cfg.WebhookCertPath != "" && cfg.WebhookKeyPath != "" {
+			logger.Info("webhook server listening (TLS)", "addr", cfg.HTTPAddr)
+			srv.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+			err = srv.ListenAndServeTLS(cfg.WebhookCertPath, cfg.WebhookKeyPath)
+		} else {
+			logger.Info("webhook server listening", "addr", cfg.HTTPAddr)
+			err = srv.ListenAndServe()
+		}
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Error("webhook server failed", "err", err)
+			os.Exit(1)
+		}
+	}()
+
+	logger.Info("bot ready", "mode", "webhook")
+	<-ctx.Done()
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		logger.Error("webhook server shutdown failed", "err", err)
+	}
 }
 
 func healthHandler(w http.ResponseWriter, _ *http.Request) {

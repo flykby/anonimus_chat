@@ -125,7 +125,7 @@ flowchart LR
 
 | # | Задача | Статус |
 |---|--------|--------|
-| 009 | [Telegram bot webhook](009-telegram-bot-webhook.md) | todo |
+| 009 | [Telegram bot webhook](009-telegram-bot-webhook.md) | done |
 | 010 | [Registration FSM](010-registration-fsm.md) | done |
 | 011 | [Main menu](011-main-menu.md) | done |
 | 012 | [i18n RU/EN](012-i18n-ru-en.md) | done |
