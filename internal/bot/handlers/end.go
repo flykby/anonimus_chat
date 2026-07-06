@@ -16,6 +16,16 @@ func (a *App) handleDialogMessage(ctx context.Context, b *bot.Bot, update *model
 		a.promptEndDialogConfirm(ctx, b, update.Message.Chat.ID, labels)
 		return
 	}
+
+	if update.Message.Text == "" {
+		return
+	}
+
+	if profile.ActiveDialogType != nil && *profile.ActiveDialogType == "p2p" {
+		return
+	}
+
+	a.sendReply(ctx, b, update.Message.Chat.ID, update.Message.Text, menu.DialogKeyboard(labels))
 }
 
 func (a *App) promptEndDialogConfirm(ctx context.Context, b *bot.Bot, chatID int64, labels menu.Labels) {

@@ -68,6 +68,25 @@ flowchart TD
 
 ---
 
+## Milestone 2 — Полный бот (текущий фокус)
+
+> Весь функционал бота end-to-end. AI = echo-заглушка (038), real LLM — после M2.
+
+См. [MILESTONE-2-full-bot.md](MILESTONE-2-full-bot.md)
+
+| # | Задача | Статус |
+|---|--------|--------|
+| 013–015 | Match + queue + end | done |
+| 038 | [AI echo stub](038-ai-echo-stub.md) | done |
+| 024 | [P2P matchmaking](024-p2p-matchmaking.md) | **next** |
+| 025 | [P2P relay](025-p2p-relay-moderation.md) | todo |
+| 026 | [Profile view](026-profile-view.md) | todo |
+| 030 | [Rules page](030-rules-page.md) | todo |
+| 012 | [i18n RU/EN](012-i18n-ru-en.md) | todo |
+| 027–029 | Profile edit / language / delete | todo |
+
+---
+
 ## Фаза 0 — Инфраструктура данных (005–008)
 
 | # | Задача | Статус |
@@ -168,23 +187,13 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    M1[001-004 Echo+CI] --> P0[005-008 Infra]
-    M1 --> P1[009-012 Bot]
-    P0 --> P1
-    P1 --> P2[013-015 Dialog]
-    P2 --> P3[036+016-019 AI RunPod]
-    P2 --> P37[037 Live F priority]
-    P2 --> P5[024-025 P2P]
-    P5 --> P37
-    P23[023 Premium] --> P37
-    P3 --> P4[020-023 Photos]
-    P1 --> P6[026-031 Profile]
-    P4 --> P6
-    P3 --> P7[032-034 Metrics]
-    P4 --> P7
-    P7 --> P8[035 Launch]
+    M2[Milestone 2 Full Bot] --> M3[Real AI 016+036]
+    M2 --> M4[Photos 020+]
+    M2 --> M37[037 Live F]
+    M3 --> M7[Metrics 032+]
+    M4 --> M7
+    M7 --> Launch[035 Launch]
 ```
 
-- **Milestone 1** можно закрыть до Postgres/Redis — только bot + CI + VM
-- P2P (024–025) и AI-ветка (036, 016–023) параллельны после фазы 2
-- RunPod (036) — до AI dialog (016), embeddings используются в 020
+**Текущий фокус:** Milestone 2 — полный бот без real AI.  
+P2P (024–025) идёт **до** RunPod (036). Live F (037) — после M2.

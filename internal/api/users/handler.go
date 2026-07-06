@@ -24,13 +24,14 @@ type registerRequest struct {
 }
 
 type profileResponse struct {
-	TelegramID     int64  `json:"telegram_id"`
-	Age            int16  `json:"age"`
-	Gender         string `json:"gender"`
-	Seeking        string `json:"seeking"`
-	Language       string `json:"language"`
-	ActiveDialog   bool   `json:"active_dialog"`
-	ActiveDialogID *int64 `json:"active_dialog_id,omitempty"`
+	TelegramID       int64   `json:"telegram_id"`
+	Age              int16   `json:"age"`
+	Gender           string  `json:"gender"`
+	Seeking          string  `json:"seeking"`
+	Language         string  `json:"language"`
+	ActiveDialog     bool    `json:"active_dialog"`
+	ActiveDialogID   *int64  `json:"active_dialog_id,omitempty"`
+	ActiveDialogType *string `json:"active_dialog_type,omitempty"`
 }
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
@@ -62,6 +63,7 @@ func (h *Handler) getByTelegram(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var activeDialogID *int64
+	var activeDialogType *string
 	if activeDialog && h.Dialogs != nil {
 		if d, ok, err := h.Dialogs.GetActiveByUserID(r.Context(), up.User.ID); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
@@ -69,10 +71,12 @@ func (h *Handler) getByTelegram(w http.ResponseWriter, r *http.Request) {
 		} else if ok {
 			id := d.ID
 			activeDialogID = &id
+			t := string(d.Type)
+			activeDialogType = &t
 		}
 	}
 
-	writeJSON(w, http.StatusOK, toProfileResponse(up, activeDialog, activeDialogID))
+	writeJSON(w, http.StatusOK, toProfileResponse(up, activeDialog, activeDialogID, activeDialogType))
 }
 
 func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
@@ -122,18 +126,19 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, toProfileResponse(up, false, nil))
+	writeJSON(w, http.StatusCreated, toProfileResponse(up, false, nil, nil))
 }
 
-func toProfileResponse(up db.UserProfile, activeDialog bool, activeDialogID *int64) profileResponse {
+func toProfileResponse(up db.UserProfile, activeDialog bool, activeDialogID *int64, activeDialogType *string) profileResponse {
 	return profileResponse{
-		TelegramID:     up.User.TelegramID,
-		Age:            up.Profile.Age,
-		Gender:         string(up.Profile.Gender),
-		Seeking:        string(up.Profile.Seeking),
-		Language:       string(up.Profile.Language),
-		ActiveDialog:   activeDialog,
-		ActiveDialogID: activeDialogID,
+		TelegramID:       up.User.TelegramID,
+		Age:              up.Profile.Age,
+		Gender:           string(up.Profile.Gender),
+		Seeking:          string(up.Profile.Seeking),
+		Language:         string(up.Profile.Language),
+		ActiveDialog:     activeDialog,
+		ActiveDialogID:   activeDialogID,
+		ActiveDialogType: activeDialogType,
 	}
 }
 
