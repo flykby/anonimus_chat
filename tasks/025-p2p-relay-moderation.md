@@ -1,6 +1,6 @@
 # 025. P2P relay & moderation
 
-**Статус:** todo  
+**Статус:** done  
 **Фаза:** p2p  
 **Зависимости:** 024, 015
 
@@ -10,30 +10,29 @@
 
 ## Scope
 
-- Relay: user A message → bot → user B (и наоборот)
-- Поддержка: text, photo (с лимитом), sticker optional
+- Relay: user A message → API → bot → user B (и наоборот)
+- Поддержка: text, photo (max 3/dialog), sticker
 - Не пересылать: contact, location, forward metadata
-- Prefix опционально: «Собеседник:» (или без prefix для immersion)
-- Кнопка «Пожаловаться» → emit event, flag dialog, notify admin
-- Кнопка «Заблокировать» → end dialog, ban pair repeat match 24h
+- Inline-кнопки «Пожаловаться» / «Заблокировать» при P2P-матче
+- Report → event `dialog.reported`, optional notify `REPORT_CHAT_ID`
+- Block → end dialog + `blocked_pair` Redis TTL 24h (matcher skip)
 - Rate limit: 30 msg/min per user in P2P
-- Фото в P2P: max 3 за dialog (anti-spam)
 
 ## Acceptance criteria
 
-- [ ] Текст A → доставлен B без username/chat_id A
-- [ ] Фото relay работает, file_id re-send
-- [ ] Report создаёт запись для модерации
-- [ ] Block завершает dialog для обоих
-- [ ] Контакты и геолокация не проходят через relay
-- [ ] End dialog (015) корректно закрывает P2P с обеих сторон
+- [x] Текст A → доставлен B без username/chat_id A
+- [x] Фото relay работает, file_id re-send
+- [x] Report создаёт event для модерации
+- [x] Block завершает dialog для обоих
+- [x] Контакты и геолокация не проходят через relay
+- [x] End dialog (015) корректно закрывает P2P с обеих сторон
 
 ## Технические заметки
 
-- `copy_message` vs `send_message` — не использовать forward
-- Admin channel для reports: `REPORT_CHAT_ID`
-- Ban list: `blocked_pairs:{min_id}:{max_id}` TTL 24h
-- Логировать hash контента, не plain text (privacy) — optional
+- API: `POST /dialogs/{id}/relay`, `/report`, `/block`
+- Bot: `send_message` / `send_photo` / `send_sticker` (не forward)
+- Ban list: `anonimus:blocked_pair:{min}:{max}` TTL 24h
+- Admin channel: `REPORT_CHAT_ID` (optional)
 
 ## Out of scope
 

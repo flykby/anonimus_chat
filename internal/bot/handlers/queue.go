@@ -38,6 +38,9 @@ func (a *App) handleStartChat(ctx context.Context, b *bot.Bot, chatID, telegramI
 	switch result.Status {
 	case "matched":
 		a.sendReply(ctx, b, chatID, labels.QueueMatched, menu.DialogKeyboard(labels))
+		if result.Route == "p2p" {
+			a.sendP2PModerationHint(ctx, b, chatID, labels)
+		}
 	case "searching", "queued":
 		count := queueDisplayCount(result)
 		gender := shared.Gender(profile.Gender)
@@ -130,6 +133,7 @@ func (a *App) runP2PQueueWait(ctx context.Context, b *bot.Bot, chatID, telegramI
 			}
 			if result.Status == "matched" {
 				a.sendReply(ctx, b, chatID, labels.QueueMatched, menu.DialogKeyboard(labels))
+				a.sendP2PModerationHint(ctx, b, chatID, labels)
 				return
 			}
 		}

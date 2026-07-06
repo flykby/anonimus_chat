@@ -107,6 +107,29 @@ func (r *DialogsRepo) MessageCount(ctx context.Context, db events.DBTX, dialogID
 	return count, nil
 }
 
+func (r *DialogsRepo) PhotoCount(ctx context.Context, db events.DBTX, dialogID int64) (int, error) {
+	var count int
+	err := db.QueryRow(ctx, `
+		SELECT COUNT(*) FROM dialog_messages
+		WHERE dialog_id = $1 AND content LIKE 'photo:%'
+	`, dialogID).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("count dialog photos: %w", err)
+	}
+	return count, nil
+}
+
+func (r *DialogsRepo) InsertMessage(ctx context.Context, db events.DBTX, dialogID int64, role shared.MessageRole, content string) error {
+	_, err := db.Exec(ctx, `
+		INSERT INTO dialog_messages (dialog_id, role, content)
+		VALUES ($1, $2, $3)
+	`, dialogID, role, content)
+	if err != nil {
+		return fmt.Errorf("insert dialog message: %w", err)
+	}
+	return nil
+}
+
 func (r *DialogsRepo) MarkEnded(ctx context.Context, db events.DBTX, dialogID int64, reason string, endedAt time.Time) error {
 	tag, err := db.Exec(ctx, `
 		UPDATE dialogs

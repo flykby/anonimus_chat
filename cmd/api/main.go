@@ -22,8 +22,10 @@ import (
 	"github.com/flykby/anonimus_chat/internal/match"
 	"github.com/flykby/anonimus_chat/internal/platform/env"
 	iredis "github.com/flykby/anonimus_chat/internal/redis"
+	"github.com/flykby/anonimus_chat/internal/redis/blockpair"
 	"github.com/flykby/anonimus_chat/internal/redis/dialogctx"
 	"github.com/flykby/anonimus_chat/internal/redis/matchqueue"
+	"github.com/flykby/anonimus_chat/internal/redis/ratelimit"
 	"github.com/flykby/anonimus_chat/internal/redis/session"
 )
 
@@ -75,13 +77,17 @@ func main() {
 		var queue *matchqueue.Store
 		var sessions *session.Store
 		var dctx *dialogctx.Store
+		var ratelimitStore *ratelimit.Store
+		var blockpairStore *blockpair.Store
 		if rdb != nil {
 			queue = matchqueue.New(rdb)
 			sessions = session.New(rdb)
 			dctx = dialogctx.New(rdb)
+			ratelimitStore = ratelimit.New(rdb)
+			blockpairStore = blockpair.New(rdb)
 		}
-		matchSvc := match.NewService(pool, usersRepo, dialogsRepo, queue, emitter, sessions)
-		dialogSvc := dialog.NewService(pool, dialogsRepo, usersRepo, emitter, sessions, dctx)
+		matchSvc := match.NewService(pool, usersRepo, dialogsRepo, queue, emitter, sessions, blockpairStore)
+		dialogSvc := dialog.NewService(pool, dialogsRepo, usersRepo, emitter, sessions, dctx, ratelimitStore, blockpairStore)
 		(&users.Handler{Users: usersRepo, Dialogs: dialogsRepo}).RegisterRoutes(mux)
 		(&matchapi.Handler{Match: matchSvc}).RegisterRoutes(mux)
 		(&dialogapi.Handler{Dialogs: dialogSvc, Users: usersRepo}).RegisterRoutes(mux)

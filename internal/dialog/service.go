@@ -10,7 +10,9 @@ import (
 
 	"github.com/flykby/anonimus_chat/internal/db"
 	"github.com/flykby/anonimus_chat/internal/events"
+	"github.com/flykby/anonimus_chat/internal/redis/blockpair"
 	"github.com/flykby/anonimus_chat/internal/redis/dialogctx"
+	"github.com/flykby/anonimus_chat/internal/redis/ratelimit"
 	"github.com/flykby/anonimus_chat/internal/redis/session"
 	"github.com/flykby/anonimus_chat/internal/shared"
 )
@@ -40,6 +42,8 @@ type Service struct {
 	events    *events.Emitter
 	sessions  *session.Store
 	dialogctx *dialogctx.Store
+	ratelimit *ratelimit.Store
+	blockpair *blockpair.Store
 }
 
 func NewService(
@@ -49,6 +53,8 @@ func NewService(
 	emitter *events.Emitter,
 	sessions *session.Store,
 	dctx *dialogctx.Store,
+	ratelimitStore *ratelimit.Store,
+	blockpairStore *blockpair.Store,
 ) *Service {
 	return &Service{
 		pool:      pool,
@@ -57,6 +63,8 @@ func NewService(
 		events:    emitter,
 		sessions:  sessions,
 		dialogctx: dctx,
+		ratelimit: ratelimitStore,
+		blockpair: blockpairStore,
 	}
 }
 

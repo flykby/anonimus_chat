@@ -21,10 +21,6 @@ func (a *App) handleDialogMessage(ctx context.Context, b *bot.Bot, update *model
 		return
 	}
 
-	if profile.ActiveDialogType != nil && *profile.ActiveDialogType == "p2p" {
-		return
-	}
-
 	a.sendReply(ctx, b, update.Message.Chat.ID, update.Message.Text, menu.DialogKeyboard(labels))
 }
 

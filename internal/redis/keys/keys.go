@@ -32,6 +32,13 @@ func RateLimit(userID int64, action string) string {
 	return fmt.Sprintf("%s:ratelimit:%d:%s", Prefix, userID, action)
 }
 
+func BlockedPair(userA, userB int64) string {
+	if userA > userB {
+		userA, userB = userB, userA
+	}
+	return fmt.Sprintf("%s:blocked_pair:%d:%d", Prefix, userA, userB)
+}
+
 func DialogContext(dialogID int64) string {
 	return fmt.Sprintf("%s:dialog_ctx:%d", Prefix, dialogID)
 }

@@ -27,6 +27,11 @@ type DialogStartedMeta struct {
 	MatchRoute string `json:"match_route"`
 }
 
+type DialogReportedMeta struct {
+	ReporterUserID int64  `json:"reporter_user_id"`
+	Reason         string `json:"reason,omitempty"`
+}
+
 type DialogEndedMeta struct {
 	Reason       string `json:"reason"`
 	DurationSec  int    `json:"duration_sec"`
@@ -103,6 +108,8 @@ func validateMetadata(eventType Type, metadata any) error {
 		return decodeValidate[DialogStartedMeta](metadata, validateDialogStarted)
 	case TypeDialogEnded:
 		return decodeValidate[DialogEndedMeta](metadata, validateDialogEnded)
+	case TypeDialogReported:
+		return decodeValidate[DialogReportedMeta](metadata, validateDialogReported)
 	case TypeMessageSent:
 		return decodeValidate[MessageSentMeta](metadata, validateMessageSent)
 	case TypeMessageReceived:
@@ -178,6 +185,13 @@ func validateDialogEnded(m DialogEndedMeta) error {
 	}
 	if m.DurationSec < 0 || m.MessageCount < 0 {
 		return fmt.Errorf("duration_sec and message_count must be >= 0")
+	}
+	return nil
+}
+
+func validateDialogReported(m DialogReportedMeta) error {
+	if m.ReporterUserID <= 0 {
+		return fmt.Errorf("reporter_user_id required")
 	}
 	return nil
 }

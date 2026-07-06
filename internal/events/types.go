@@ -11,6 +11,7 @@ const (
 
 	TypeDialogStarted Type = "dialog.started"
 	TypeDialogEnded   Type = "dialog.ended"
+	TypeDialogReported Type = "dialog.reported"
 
 	TypeMessageSent     Type = "message.sent"
 	TypeMessageReceived Type = "message.received"
@@ -32,6 +33,7 @@ var allTypes = []Type{
 	TypeUserDeleted,
 	TypeDialogStarted,
 	TypeDialogEnded,
+	TypeDialogReported,
 	TypeMessageSent,
 	TypeMessageReceived,
 	TypePhotoRequested,

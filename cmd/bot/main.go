@@ -86,10 +86,11 @@ func runTelegramBot(ctx context.Context, logger *slog.Logger, cfg config.Config)
 	defer rdb.Close()
 
 	app := &handlers.App{
-		Logger: logger,
-		FSM:    fsm.New(rdb),
-		Draft:  regdraft.New(rdb),
-		API:    apiclient.NewClient(cfg.APIURL),
+		Logger:       logger,
+		FSM:          fsm.New(rdb),
+		Draft:        regdraft.New(rdb),
+		API:          apiclient.NewClient(cfg.APIURL),
+		ReportChatID: cfg.ReportChatID,
 	}
 
 	tg, err := bot.New(cfg.BotToken, bot.WithDefaultHandler(app.Default))

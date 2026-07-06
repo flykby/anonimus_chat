@@ -17,11 +17,12 @@ import (
 )
 
 type App struct {
-	Logger    *slog.Logger
-	FSM       *fsm.Store
-	Draft     *regdraft.Store
-	API       *apiclient.Client
-	queueWait sync.Map
+	Logger       *slog.Logger
+	FSM          *fsm.Store
+	Draft        *regdraft.Store
+	API          *apiclient.Client
+	ReportChatID int64
+	queueWait    sync.Map
 }
 
 func (a *App) Register(b *bot.Bot) {
@@ -29,13 +30,14 @@ func (a *App) Register(b *bot.Bot) {
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "reg:", bot.MatchTypePrefix, a.onRegCallback)
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "menu:", bot.MatchTypePrefix, a.onMenuCallback)
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "end:", bot.MatchTypePrefix, a.onEndCallback)
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "p2p:", bot.MatchTypePrefix, a.onP2PCallback)
 }
 
 func (a *App) Default(ctx context.Context, b *bot.Bot, update *models.Update) {
-	if update.Message == nil || update.Message.Text == "" {
+	if update.Message == nil {
 		return
 	}
-	if strings.HasPrefix(update.Message.Text, "/") {
+	if update.Message.Text != "" && strings.HasPrefix(update.Message.Text, "/") {
 		return
 	}
 
@@ -46,6 +48,9 @@ func (a *App) Default(ctx context.Context, b *bot.Bot, update *models.Update) {
 		return
 	}
 	if ok {
+		if update.Message.Text == "" {
+			return
+		}
 		a.handleRegistrationMessage(ctx, b, update, state)
 		return
 	}
@@ -57,7 +62,20 @@ func (a *App) Default(ctx context.Context, b *bot.Bot, update *models.Update) {
 		return
 	}
 	if !registered {
+		if update.Message.Text == "" {
+			return
+		}
 		a.sendWelcome(ctx, b, update.Message.Chat.ID)
+		return
+	}
+
+	if profile.ActiveDialog && profile.ActiveDialogType != nil && *profile.ActiveDialogType == "p2p" {
+		labels := menu.LabelsFor(menu.ParseLanguage(profile.Language))
+		a.handleP2PUpdate(ctx, b, update, profile, labels)
+		return
+	}
+
+	if update.Message.Text == "" {
 		return
 	}
 

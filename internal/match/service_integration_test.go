@@ -34,7 +34,7 @@ func TestIntegrationP2PMatchMalePair(t *testing.T) {
 	dialogs := db.NewDialogsRepo(pool)
 	queue := matchqueue.New(rdb)
 	sessions := session.New(rdb)
-	svc := match.NewService(pool, users, dialogs, queue, emitter, sessions)
+	svc := match.NewService(pool, users, dialogs, queue, emitter, sessions, nil)
 
 	tgA := time.Now().UnixNano()
 	tgB := tgA + 1
@@ -122,7 +122,7 @@ func TestIntegrationP2PMatchHeteroPair(t *testing.T) {
 	dialogs := db.NewDialogsRepo(pool)
 	queue := matchqueue.New(rdb)
 	sessions := session.New(rdb)
-	svc := match.NewService(pool, users, dialogs, queue, emitter, sessions)
+	svc := match.NewService(pool, users, dialogs, queue, emitter, sessions, nil)
 
 	tgF := time.Now().UnixNano() + 100
 	tgM := tgF + 1
@@ -190,7 +190,7 @@ func TestIntegrationP2PCancelLeavesQueue(t *testing.T) {
 	users := db.NewUsersRepo(pool, emitter)
 	dialogs := db.NewDialogsRepo(pool)
 	queue := matchqueue.New(rdb)
-	svc := match.NewService(pool, users, dialogs, queue, emitter, nil)
+	svc := match.NewService(pool, users, dialogs, queue, emitter, nil, nil)
 
 	tg := time.Now().UnixNano() + 200
 	up, err := users.Register(ctx, db.RegisterInput{

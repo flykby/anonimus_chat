@@ -10,6 +10,7 @@ import (
 
 	"github.com/flykby/anonimus_chat/internal/db"
 	"github.com/flykby/anonimus_chat/internal/events"
+	"github.com/flykby/anonimus_chat/internal/redis/blockpair"
 	"github.com/flykby/anonimus_chat/internal/redis/matchqueue"
 	"github.com/flykby/anonimus_chat/internal/redis/session"
 	"github.com/flykby/anonimus_chat/internal/shared"
@@ -32,12 +33,13 @@ type StartResponse struct {
 }
 
 type Service struct {
-	pool     *pgxpool.Pool
-	users    *db.UsersRepo
-	dialogs  *db.DialogsRepo
-	queue    *matchqueue.Store
-	events   *events.Emitter
-	sessions *session.Store
+	pool      *pgxpool.Pool
+	users     *db.UsersRepo
+	dialogs   *db.DialogsRepo
+	queue     *matchqueue.Store
+	events    *events.Emitter
+	sessions  *session.Store
+	blockpair *blockpair.Store
 }
 
 func NewService(
@@ -47,14 +49,16 @@ func NewService(
 	queue *matchqueue.Store,
 	emitter *events.Emitter,
 	sessions *session.Store,
+	blockpairStore *blockpair.Store,
 ) *Service {
 	return &Service{
-		pool:     pool,
-		users:    users,
-		dialogs:  dialogs,
-		queue:    queue,
-		events:   emitter,
-		sessions: sessions,
+		pool:      pool,
+		users:     users,
+		dialogs:   dialogs,
+		queue:     queue,
+		events:    emitter,
+		sessions:  sessions,
+		blockpair: blockpairStore,
 	}
 }
 
@@ -364,6 +368,22 @@ func (s *Service) createP2PMatch(ctx context.Context, userAID, userBID int64, ma
 			}
 		}
 		return nil
+	}
+
+	if s.blockpair != nil {
+		blocked, err := s.blockpair.IsBlocked(ctx, userAID, userBID)
+		if err != nil {
+			return err
+		}
+		if blocked {
+			if err := s.enqueueUser(ctx, upA); err != nil {
+				return err
+			}
+			if err := s.enqueueUser(ctx, upB); err != nil {
+				return err
+			}
+			return nil
+		}
 	}
 
 	tx, err := s.pool.Begin(ctx)

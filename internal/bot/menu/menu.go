@@ -17,6 +17,8 @@ const (
 	CBEndConfirm  = "end:confirm"
 	CBEndCancel   = "end:cancel"
 	CBQueueCancel = "menu:queue_cancel"
+	CBP2PReport   = "p2p:report"
+	CBP2PBlock    = "p2p:block"
 )
 
 type Action int
@@ -55,6 +57,16 @@ type Labels struct {
 	EndDialogCancelled  string
 	EndDialogEnded      string
 	PartnerEndedDialog  string
+	PartnerBlockedDialog string
+	P2PDisallowedMsg    string
+	P2PRateLimited      string
+	P2PPhotoLimit       string
+	P2PRelayError       string
+	P2PReport           string
+	P2PBlock            string
+	P2PReportSent       string
+	P2PBlocked          string
+	P2PModerationHint   string
 	DialogActiveHint    string
 }
 
@@ -86,6 +98,16 @@ func LabelsFor(lang shared.Language) Labels {
 			EndDialogCancelled:  "Staying in the chat.",
 			EndDialogEnded:      "Chat ended.",
 			PartnerEndedDialog:  "Your partner ended the chat.",
+			PartnerBlockedDialog: "Your partner blocked you. The chat has ended.",
+			P2PDisallowedMsg:    "Contacts, location, and forwards are not allowed in this chat.",
+			P2PRateLimited:      "Too many messages. Please wait a minute.",
+			P2PPhotoLimit:       "Photo limit reached for this chat (max 3).",
+			P2PRelayError:       "Could not deliver the message. Please try again.",
+			P2PReport:           "Report",
+			P2PBlock:            "Block",
+			P2PReportSent:       "Report sent. Moderators will review it.",
+			P2PBlocked:          "User blocked. Chat ended.",
+			P2PModerationHint:   "You can report or block your partner if needed.",
 			DialogActiveHint:    "Chat is active. Tap End dialog to leave.",
 		}
 	default:
@@ -114,6 +136,16 @@ func LabelsFor(lang shared.Language) Labels {
 			EndDialogCancelled:  "Остаёмся в диалоге.",
 			EndDialogEnded:      "Диалог завершён.",
 			PartnerEndedDialog:  "Собеседник завершил диалог.",
+			PartnerBlockedDialog: "Собеседник заблокировал тебя. Диалог завершён.",
+			P2PDisallowedMsg:    "Контакты, геолокация и пересланные сообщения здесь запрещены.",
+			P2PRateLimited:      "Слишком много сообщений. Подожди минуту.",
+			P2PPhotoLimit:       "Лимит фото в этом диалоге исчерпан (макс. 3).",
+			P2PRelayError:       "Не удалось доставить сообщение. Попробуй ещё раз.",
+			P2PReport:           "Пожаловаться",
+			P2PBlock:            "Заблокировать",
+			P2PReportSent:       "Жалоба отправлена. Модераторы её проверят.",
+			P2PBlocked:          "Пользователь заблокирован. Диалог завершён.",
+			P2PModerationHint:   "При необходимости можно пожаловаться или заблокировать собеседника.",
 			DialogActiveHint:    "Диалог активен. Нажми «Завершить диалог», чтобы выйти.",
 		}
 	}
@@ -215,6 +247,15 @@ func EndConfirmButtons(labels Labels) [][]models.InlineKeyboardButton {
 		{
 			{Text: labels.EndDialogConfirmYes, CallbackData: CBEndConfirm},
 			{Text: labels.EndDialogConfirmNo, CallbackData: CBEndCancel},
+		},
+	}
+}
+
+func P2PModerationButtons(labels Labels) [][]models.InlineKeyboardButton {
+	return [][]models.InlineKeyboardButton{
+		{
+			{Text: labels.P2PReport, CallbackData: CBP2PReport},
+			{Text: labels.P2PBlock, CallbackData: CBP2PBlock},
 		},
 	}
 }
