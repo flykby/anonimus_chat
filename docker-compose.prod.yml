@@ -32,6 +32,8 @@ services:
     build: !reset null
     restart: unless-stopped
     # Port 8443 for webhook (Telegram requires 443, 80, 88, or 8443)
+    volumes:
+      - ./certs:/app/certs:ro
     ports:
       - "8443:8080"
     logging:

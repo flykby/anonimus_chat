@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -137,12 +138,6 @@ func runPollingMode(ctx context.Context, logger *slog.Logger, tg *bot.Bot) {
 func runWebhookMode(ctx context.Context, logger *slog.Logger, cfg config.Config, tg *bot.Bot) {
 	wh := webhook.New(tg, cfg.WebhookSecret, logger)
 
-	if err := wh.Register(ctx, cfg.WebhookURL, cfg.WebhookCertPath); err != nil {
-		logger.Error("failed to register webhook", "err", err)
-		os.Exit(1)
-	}
-	logger.Info("webhook registered", "url", cfg.WebhookURL)
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", healthHandler)
 	mux.HandleFunc("POST /telegram/webhook", wh.Handler)
@@ -153,23 +148,53 @@ func runWebhookMode(ctx context.Context, logger *slog.Logger, cfg config.Config,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
+	useTLS := cfg.WebhookCertPath != "" && cfg.WebhookKeyPath != ""
+	if useTLS {
+		cert, err := tls.LoadX509KeyPair(cfg.WebhookCertPath, cfg.WebhookKeyPath)
+		if err != nil {
+			logger.Error("webhook TLS certificate not accessible", "err", err)
+			os.Exit(1)
+		}
+		srv.TLSConfig = &tls.Config{
+			MinVersion:   tls.VersionTLS12,
+			Certificates: []tls.Certificate{cert},
+		}
+	}
+
+	ready := make(chan struct{})
 	go func() {
-		var err error
-		if cfg.WebhookCertPath != "" && cfg.WebhookKeyPath != "" {
+		var (
+			ln  net.Listener
+			err error
+		)
+		if useTLS {
 			logger.Info("webhook server listening (TLS)", "addr", cfg.HTTPAddr)
-			srv.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
-			err = srv.ListenAndServeTLS(cfg.WebhookCertPath, cfg.WebhookKeyPath)
+			ln, err = tls.Listen("tcp", cfg.HTTPAddr, srv.TLSConfig)
 		} else {
 			logger.Info("webhook server listening", "addr", cfg.HTTPAddr)
-			err = srv.ListenAndServe()
+			ln, err = net.Listen("tcp", cfg.HTTPAddr)
 		}
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err != nil {
+			logger.Error("webhook server failed to bind", "err", err)
+			os.Exit(1)
+		}
+		close(ready)
+
+		if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.Error("webhook server failed", "err", err)
 			os.Exit(1)
 		}
 	}()
 
+	<-ready
+
+	if err := wh.Register(ctx, cfg.WebhookURL, cfg.WebhookCertPath); err != nil {
+		logger.Error("failed to register webhook", "err", err)
+		os.Exit(1)
+	}
+	logger.Info("webhook registered", "url", cfg.WebhookURL)
 	logger.Info("bot ready", "mode", "webhook")
+
 	<-ctx.Done()
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
