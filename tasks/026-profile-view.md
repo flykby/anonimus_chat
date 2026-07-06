@@ -1,51 +1,37 @@
 # 026. Profile view
 
-**Статус:** todo  
+**Статус:** done  
 **Фаза:** profile  
-**Зависимости:** 011, 023, 009
+**Зависимости:** 011, 009
 
 ## Описание
 
-Экран профиля пользователя: внутренний UUID, статус premium, данные анкеты. Точка входа для редактирования, покупки premium и удаления.
+Экран профиля пользователя: public UUID, статус premium, данные анкеты. Точка входа для редактирования, покупки premium и удаления.
 
 ## Scope
 
-- Текст профиля (RU/EN):
-  ```
-  Пользователь <UUID>
-
-  Premium: <отсутствует / действует до DD.MM.YYYY HH:mm UTC+0>
-
-  Анкета:
-  Пол: <Парень/Девушка>
-  Ищу: <Парень/Девушка>
-  Возраст: <число>
-  Язык: <RU/EN>
-  ```
-- Inline-кнопки:
-  1. Купить премиум → 028
-  2. Изменить анкету → 024
-  3. Сменить язык → 025
-  4. Удалить профиль → 026
-  5. Назад → главное меню
-- API: `GET /users/me/profile`
+- Текст профиля (RU/EN) с UUID, premium, анкетой
+- Inline-кнопки: premium / edit / language / delete / back
+- API: `GET /users/by-telegram/{id}/profile`, `GET /users/me/profile?telegram_id=`
+- Premium статус из `premium_subscriptions` (активная подписка)
 
 ## Acceptance criteria
 
-- [ ] Профиль отображает актуальные данные из БД
-- [ ] UUID — public_uuid, не internal id
-- [ ] Premium статус корректен (023)
-- [ ] Все 5 кнопок ведут в правильные flows
-- [ ] «Назад» возвращает в главное меню
+- [x] Профиль отображает актуальные данные из БД
+- [x] UUID — public_uuid, не internal id
+- [x] Premium статус корректен (active + expires_at UTC+0)
+- [x] Все 5 кнопок ведут в правильные flows (stubs → 027–029, 031)
+- [x] «Назад» возвращает в главное меню
 
 ## Технические заметки
 
-- Формат даты premium: `strftime('%d.%m.%Y %H:%M')` UTC
-- Gender display: male→Парень/ Guy, female→Девушка/Girl
-- Не показывать telegram_id пользователю
-- Кнопка premium скрыта или «Продлить» если уже active
+- Формат даты premium: `DD.MM.YYYY HH:MM UTC+0`
+- Gender EN: Guy / Girl
+- telegram_id не показывается пользователю
+- Premium active → кнопка «Продлить премиум»
 
 ## Out of scope
 
 - Аватар / фото профиля
 - Статистика диалогов в профиле
+- Реальная покупка premium (031)

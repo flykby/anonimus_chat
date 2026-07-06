@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/flykby/anonimus_chat/internal/db"
 	"github.com/flykby/anonimus_chat/internal/shared"
@@ -34,8 +35,20 @@ type profileResponse struct {
 	ActiveDialogType *string `json:"active_dialog_type,omitempty"`
 }
 
+type profileViewResponse struct {
+	PublicUUID       string     `json:"public_uuid"`
+	Age              int16      `json:"age"`
+	Gender           string     `json:"gender"`
+	Seeking          string     `json:"seeking"`
+	Language         string     `json:"language"`
+	PremiumActive    bool       `json:"premium_active"`
+	PremiumExpiresAt *time.Time `json:"premium_expires_at,omitempty"`
+}
+
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /users/by-telegram/{telegram_id}", h.getByTelegram)
+	mux.HandleFunc("GET /users/by-telegram/{telegram_id}/profile", h.getProfileView)
+	mux.HandleFunc("GET /users/me/profile", h.getProfileViewMe)
 	mux.HandleFunc("POST /users/register", h.register)
 }
 
@@ -77,6 +90,60 @@ func (h *Handler) getByTelegram(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, toProfileResponse(up, activeDialog, activeDialogID, activeDialogType))
+}
+
+func (h *Handler) getProfileViewMe(w http.ResponseWriter, r *http.Request) {
+	telegramID, err := strconv.ParseInt(r.URL.Query().Get("telegram_id"), 10, 64)
+	if err != nil || telegramID <= 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "telegram_id required"})
+		return
+	}
+	h.writeProfileView(w, r, telegramID)
+}
+
+func (h *Handler) getProfileView(w http.ResponseWriter, r *http.Request) {
+	telegramID, err := strconv.ParseInt(r.PathValue("telegram_id"), 10, 64)
+	if err != nil || telegramID <= 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid telegram_id"})
+		return
+	}
+	h.writeProfileView(w, r, telegramID)
+}
+
+func (h *Handler) writeProfileView(w http.ResponseWriter, r *http.Request, telegramID int64) {
+	up, ok, err := h.Users.GetByTelegramID(r.Context(), telegramID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+		return
+	}
+	if !ok {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+		return
+	}
+
+	premium, err := h.Users.GetPremiumStatus(r.Context(), up.User.ID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toProfileViewResponse(up, premium))
+}
+
+func toProfileViewResponse(up db.UserProfile, premium db.PremiumStatus) profileViewResponse {
+	resp := profileViewResponse{
+		PublicUUID:    up.User.PublicUUID,
+		Age:           up.Profile.Age,
+		Gender:        string(up.Profile.Gender),
+		Seeking:       string(up.Profile.Seeking),
+		Language:      string(up.Profile.Language),
+		PremiumActive: premium.Active,
+	}
+	if premium.ExpiresAt != nil {
+		expires := premium.ExpiresAt.UTC()
+		resp.PremiumExpiresAt = &expires
+	}
+	return resp
 }
 
 func (h *Handler) register(w http.ResponseWriter, r *http.Request) {

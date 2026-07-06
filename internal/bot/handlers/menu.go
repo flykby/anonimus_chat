@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
@@ -26,7 +27,7 @@ func (a *App) handleRegisteredMessage(ctx context.Context, b *bot.Bot, update *m
 	case menu.ActionCancelQueue:
 		a.handleCancelQueue(ctx, b, update.Message.Chat.ID, update.Message.From.ID, labels)
 	case menu.ActionProfile:
-		a.sendProfileStub(ctx, b, update.Message.Chat.ID, profile, labels)
+		a.sendProfileView(ctx, b, update.Message.Chat.ID, update.Message.From.ID, lang)
 	case menu.ActionRules:
 		a.sendRulesStub(ctx, b, update.Message.Chat.ID, labels)
 	case menu.ActionEndDialog:
@@ -51,16 +52,25 @@ func (a *App) onMenuCallback(ctx context.Context, b *bot.Bot, update *models.Upd
 	msg := update.CallbackQuery.Message.Message
 	a.clearInlineKeyboard(ctx, b, msg.Chat.ID, msg.ID)
 
-	if data != menu.CBBack {
+	if data == menu.CBBack {
+		profile, ok, err := a.API.GetByTelegramID(ctx, telegramID)
+		if err != nil || !ok {
+			a.promptRegistration(ctx, b, msg.Chat.ID)
+			return
+		}
+		a.showMainMenu(ctx, b, msg.Chat.ID, profile)
 		return
 	}
 
-	profile, ok, err := a.API.GetByTelegramID(ctx, telegramID)
-	if err != nil || !ok {
-		a.promptRegistration(ctx, b, msg.Chat.ID)
-		return
+	if strings.HasPrefix(data, "menu:profile:") {
+		profile, ok, err := a.API.GetByTelegramID(ctx, telegramID)
+		if err != nil || !ok {
+			a.promptRegistration(ctx, b, msg.Chat.ID)
+			return
+		}
+		labels := menu.LabelsFor(menu.ParseLanguage(profile.Language))
+		a.handleProfileCallback(ctx, b, msg.Chat.ID, data, labels)
 	}
-	a.showMainMenu(ctx, b, msg.Chat.ID, profile)
 }
 
 func (a *App) showMainMenu(ctx context.Context, b *bot.Bot, chatID int64, profile apiclient.Profile) {
@@ -73,14 +83,6 @@ func (a *App) showMainMenu(ctx context.Context, b *bot.Bot, chatID int64, profil
 	}
 
 	a.sendReply(ctx, b, chatID, labels.MenuTitle, menu.MainKeyboard(labels))
-}
-
-func (a *App) sendProfileStub(ctx context.Context, b *bot.Bot, chatID int64, profile apiclient.Profile, labels menu.Labels) {
-	lang := menu.ParseLanguage(profile.Language)
-	text := labels.ProfileMsg + "\n\n" + menu.ProfileSummary(profile.Age, profile.Gender, profile.Seeking, lang)
-	a.sendInline(ctx, b, chatID, text, [][]models.InlineKeyboardButton{
-		{menu.BackButton(labels)},
-	})
 }
 
 func (a *App) sendRulesStub(ctx context.Context, b *bot.Bot, chatID int64, labels menu.Labels) {

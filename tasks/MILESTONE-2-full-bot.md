@@ -13,18 +13,18 @@
 | 013–015 | Match routing, queue UX, end dialog |
 | 024 | P2P matchmaking (M+M, F+M) |
 | 025 | P2P relay & moderation |
+| 026 | Profile view |
 | 038 | AI echo stub |
 
 ## Очередь (делаем дальше)
 
 | Приоритет | # | Задача | Зачем |
 |-----------|---|--------|-------|
-| 1 | 026 | Profile view | Вместо stub в меню «Профиль» |
-| 2 | 030 | Rules page | Вместо stub в меню «Правила» |
-| 3 | 012 | i18n RU/EN | Все строки в locale-файлах |
-| 4 | 027 | Edit profile | Смена анкеты |
-| 5 | 028 | Change language | Язык UI |
-| 6 | 029 | Delete profile | Удаление + anti-abuse |
+| 1 | 030 | Rules page | Вместо stub в меню «Правила» |
+| 2 | 012 | i18n RU/EN | Все строки в locale-файлах |
+| 3 | 027 | Edit profile | Смена анкеты |
+| 4 | 028 | Change language | Язык UI |
+| 5 | 029 | Delete profile | Удаление + anti-abuse |
 
 ## Отложено (после Milestone 2)
 

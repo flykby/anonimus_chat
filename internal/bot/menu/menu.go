@@ -9,16 +9,20 @@ import (
 )
 
 const (
-	CBBack        = "menu:back"
-	CBStartChat   = "menu:start_chat"
-	CBProfile     = "menu:profile"
-	CBRules       = "menu:rules"
-	CBEndDialog   = "menu:end_dialog"
-	CBEndConfirm  = "end:confirm"
-	CBEndCancel   = "end:cancel"
-	CBQueueCancel = "menu:queue_cancel"
-	CBP2PReport   = "p2p:report"
-	CBP2PBlock    = "p2p:block"
+	CBBack              = "menu:back"
+	CBStartChat         = "menu:start_chat"
+	CBProfile           = "menu:profile"
+	CBRules             = "menu:rules"
+	CBEndDialog         = "menu:end_dialog"
+	CBEndConfirm        = "end:confirm"
+	CBEndCancel         = "end:cancel"
+	CBQueueCancel       = "menu:queue_cancel"
+	CBP2PReport         = "p2p:report"
+	CBP2PBlock          = "p2p:block"
+	CBProfilePremium    = "menu:profile:premium"
+	CBProfileEdit       = "menu:profile:edit"
+	CBProfileLanguage   = "menu:profile:language"
+	CBProfileDelete     = "menu:profile:delete"
 )
 
 type Action int
@@ -48,8 +52,17 @@ type Labels struct {
 	QueueMatched        string
 	QueueTimeout        string
 	QueueCancelled      string
-	ProfileMsg          string
-	RulesMsg            string
+	ProfileMsg            string
+	ProfileBuyPremium     string
+	ProfileExtendPremium  string
+	ProfileEdit           string
+	ProfileChangeLanguage string
+	ProfileDelete         string
+	ProfilePremiumStub    string
+	ProfileEditStub       string
+	ProfileLanguageStub   string
+	ProfileDeleteStub     string
+	RulesMsg              string
 	EndDialogMsg        string
 	EndDialogConfirm    string
 	EndDialogConfirmYes string
@@ -89,8 +102,17 @@ func LabelsFor(lang shared.Language) Labels {
 			QueueMatched:        "Partner found. Send your first message.",
 			QueueTimeout:        "Still searching. Tap Cancel to leave the queue or wait a bit longer.",
 			QueueCancelled:      "Search cancelled.",
-			ProfileMsg:          "Profile section is coming soon.",
-			RulesMsg:            "1. Be respectful.\n2. Do not share personal data.\n3. No illegal content.\n\nFull rules page is coming soon.",
+			ProfileMsg:            "Profile section is coming soon.",
+			ProfileBuyPremium:     "Buy premium",
+			ProfileExtendPremium:  "Extend premium",
+			ProfileEdit:           "Edit profile",
+			ProfileChangeLanguage: "Change language",
+			ProfileDelete:         "Delete profile",
+			ProfilePremiumStub:    "Premium purchase is coming soon.",
+			ProfileEditStub:       "Profile editing is coming soon.",
+			ProfileLanguageStub:   "Language change is coming soon.",
+			ProfileDeleteStub:     "Profile deletion is coming soon.",
+			RulesMsg:              "1. Be respectful.\n2. Do not share personal data.\n3. No illegal content.\n\nFull rules page is coming soon.",
 			EndDialogMsg:        "Ending a dialog is coming soon.",
 			EndDialogConfirm:    "End this chat?",
 			EndDialogConfirmYes: "End chat",
@@ -127,8 +149,17 @@ func LabelsFor(lang shared.Language) Labels {
 			QueueMatched:        "Собеседник найден. Напиши первым сообщение.",
 			QueueTimeout:        "Всё ещё ищем. Нажми «Отмена», чтобы выйти из очереди, или подожди ещё.",
 			QueueCancelled:      "Поиск отменён.",
-			ProfileMsg:          "Раздел профиля скоро будет доступен.",
-			RulesMsg:            "1. Будь уважителен к собеседнику.\n2. Не делись личными данными.\n3. Запрещён незаконный контент.\n\nПолная страница правил скоро появится.",
+			ProfileMsg:            "Раздел профиля скоро будет доступен.",
+			ProfileBuyPremium:     "Купить премиум",
+			ProfileExtendPremium:  "Продлить премиум",
+			ProfileEdit:           "Изменить анкету",
+			ProfileChangeLanguage: "Сменить язык",
+			ProfileDelete:         "Удалить профиль",
+			ProfilePremiumStub:    "Покупка премиума скоро будет доступна.",
+			ProfileEditStub:       "Редактирование анкеты скоро будет доступно.",
+			ProfileLanguageStub:   "Смена языка скоро будет доступна.",
+			ProfileDeleteStub:     "Удаление профиля скоро будет доступно.",
+			RulesMsg:              "1. Будь уважителен к собеседнику.\n2. Не делись личными данными.\n3. Запрещён незаконный контент.\n\nПолная страница правил скоро появится.",
 			EndDialogMsg:        "Завершение диалога скоро будет доступно.",
 			EndDialogConfirm:    "Завершить диалог?",
 			EndDialogConfirmYes: "Завершить",
