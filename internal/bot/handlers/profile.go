@@ -41,7 +41,8 @@ func (a *App) handleProfileCallback(ctx context.Context, b *bot.Bot, chatID, tel
 		a.sendEditMenu(ctx, b, chatID, telegramID, lang)
 		return
 	case menu.CBProfileLanguage:
-		stub = labels.ProfileLanguageStub
+		a.sendLanguageChoice(ctx, b, chatID, lang)
+		return
 	case menu.CBProfileDelete:
 		stub = labels.ProfileDeleteStub
 	default:

@@ -64,6 +64,10 @@ profile:
     save_error: "Не удалось сохранить изменения. Попробуй позже."
     active_dialog: "Сначала заверши текущий диалог, чтобы изменить пол или «кого ищу»."
   language_stub: "Смена языка скоро будет доступна."
+  language_flow:
+    prompt: "Выбери язык интерфейса:"
+    changed: "Язык изменён на {language}."
+    save_error: "Не удалось сохранить язык. Попробуй позже."
   delete_stub: "Удаление профиля скоро будет доступно."
   view:
     template: "Пользователь {uuid}\n\nPremium: {premium}\n\nАнкета:\nПол: {gender}\nИщу: {seeking}\nВозраст: {age}\nЯзык: {language_code}"

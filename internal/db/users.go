@@ -192,13 +192,14 @@ func (r *UsersRepo) Register(ctx context.Context, in RegisterInput) (UserProfile
 }
 
 type UpdateProfilePatch struct {
-	Age     *int16
-	Gender  *shared.Gender
-	Seeking *shared.Gender
+	Age      *int16
+	Gender   *shared.Gender
+	Seeking  *shared.Gender
+	Language *shared.Language
 }
 
 func (r *UsersRepo) UpdateProfile(ctx context.Context, telegramID int64, patch UpdateProfilePatch) (UserProfile, error) {
-	if patch.Age == nil && patch.Gender == nil && patch.Seeking == nil {
+	if patch.Age == nil && patch.Gender == nil && patch.Seeking == nil && patch.Language == nil {
 		return UserProfile{}, ErrNoProfileChanges
 	}
 
@@ -245,6 +246,14 @@ func (r *UsersRepo) UpdateProfile(ctx context.Context, telegramID int64, patch U
 		})
 		up.Profile.Seeking = *patch.Seeking
 	}
+	if patch.Language != nil && *patch.Language != up.Profile.Language {
+		changes = append(changes, events.ProfileFieldChange{
+			Field: "language",
+			Old:   string(up.Profile.Language),
+			New:   string(*patch.Language),
+		})
+		up.Profile.Language = *patch.Language
+	}
 	if len(changes) == 0 {
 		return up, nil
 	}
@@ -257,9 +266,9 @@ func (r *UsersRepo) UpdateProfile(ctx context.Context, telegramID int64, patch U
 
 	_, err = tx.Exec(ctx, `
 		UPDATE profiles
-		SET gender = $2, seeking = $3, age = $4
+		SET gender = $2, seeking = $3, age = $4, language = $5
 		WHERE user_id = $1
-	`, up.User.ID, up.Profile.Gender, up.Profile.Seeking, up.Profile.Age)
+	`, up.User.ID, up.Profile.Gender, up.Profile.Seeking, up.Profile.Age, up.Profile.Language)
 	if err != nil {
 		return UserProfile{}, fmt.Errorf("update profile: %w", err)
 	}

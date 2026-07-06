@@ -56,6 +56,7 @@ type patchProfileRequest struct {
 	Age        *int16  `json:"age,omitempty"`
 	Gender     *string `json:"gender,omitempty"`
 	Seeking    *string `json:"seeking,omitempty"`
+	Language   *string `json:"language,omitempty"`
 }
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
@@ -242,7 +243,14 @@ func parseProfilePatch(req patchProfileRequest) (db.UpdateProfilePatch, error) {
 		}
 		patch.Seeking = &seeking
 	}
-	if patch.Age == nil && patch.Gender == nil && patch.Seeking == nil {
+	if req.Language != nil {
+		language, err := parseLanguage(*req.Language)
+		if err != nil {
+			return patch, errors.New("invalid language")
+		}
+		patch.Language = &language
+	}
+	if patch.Age == nil && patch.Gender == nil && patch.Seeking == nil && patch.Language == nil {
 		return patch, errors.New("at least one field required")
 	}
 	return patch, nil

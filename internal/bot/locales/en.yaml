@@ -64,6 +64,10 @@ profile:
     save_error: "Could not save changes. Please try again later."
     active_dialog: "End the current chat before changing gender or who you are looking for."
   language_stub: "Language change is coming soon."
+  language_flow:
+    prompt: "Choose interface language:"
+    changed: "Language changed to {language}."
+    save_error: "Could not save language. Please try again later."
   delete_stub: "Profile deletion is coming soon."
   view:
     template: "User {uuid}\n\nPremium: {premium}\n\nProfile:\nGender: {gender}\nLooking for: {seeking}\nAge: {age}\nLanguage: {language_code}"

@@ -54,6 +54,7 @@ type UpdateProfileRequest struct {
 	Age        *int16  `json:"age,omitempty"`
 	Gender     *string `json:"gender,omitempty"`
 	Seeking    *string `json:"seeking,omitempty"`
+	Language   *string `json:"language,omitempty"`
 }
 
 func (c *Client) UpdateProfile(ctx context.Context, req UpdateProfileRequest) (ProfileView, error) {

@@ -133,6 +133,27 @@ func TestPatchProfileNoFields(t *testing.T) {
 	}
 }
 
+func TestPatchProfileInvalidLanguage(t *testing.T) {
+	t.Parallel()
+
+	h := &Handler{Users: nil}
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	lang := "de"
+	body, _ := json.Marshal(patchProfileRequest{
+		TelegramID: 1,
+		Language:   &lang,
+	})
+	req := httptest.NewRequest(http.MethodPatch, "/users/me/profile", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", rec.Code)
+	}
+}
+
 func ptrInt16(v int16) *int16 {
 	return &v
 }
