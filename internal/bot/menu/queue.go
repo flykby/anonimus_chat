@@ -5,33 +5,19 @@ import (
 
 	"github.com/go-telegram/bot/models"
 
+	"github.com/flykby/anonimus_chat/internal/bot/locales"
 	"github.com/flykby/anonimus_chat/internal/shared"
 )
 
 func QueueWaitingText(count int64, gender shared.Gender, lang shared.Language) string {
-	if lang == shared.LanguageEN {
-		return fmt.Sprintf(
-			"You are in the queue looking for a partner.\n\nUsers matching your preferences: %d\n\n%s",
-			count,
-			queueSeekingEN(),
-		)
+	seekingKey := "queue.seeking_male"
+	if gender == shared.GenderFemale && lang == shared.LanguageRU {
+		seekingKey = "queue.seeking_female"
 	}
-	return fmt.Sprintf(
-		"Вы находитесь в очереди на поиск собеседника.\n\nПользователей подходящих под ваши параметры: %d\n\n%s",
-		count,
-		queueSeekingRU(gender),
-	)
-}
-
-func queueSeekingRU(gender shared.Gender) string {
-	if gender == shared.GenderFemale {
-		return "Ищем лучшую из них"
-	}
-	return "Ищем лучшего из них"
-}
-
-func queueSeekingEN() string {
-	return "Looking for the best match"
+	return locales.T("queue.waiting", lang, map[string]string{
+		"count":   fmt.Sprint(count),
+		"seeking": locales.T(seekingKey, lang, nil),
+	})
 }
 
 func QueueWaitingKeyboard(labels Labels) models.ReplyKeyboardMarkup {

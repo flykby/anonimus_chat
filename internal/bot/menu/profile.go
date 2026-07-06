@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-telegram/bot/models"
 
+	"github.com/flykby/anonimus_chat/internal/bot/locales"
 	"github.com/flykby/anonimus_chat/internal/shared"
 )
 
@@ -20,27 +21,14 @@ type ProfileViewData struct {
 }
 
 func ProfileViewText(data ProfileViewData, lang shared.Language) string {
-	if lang == shared.LanguageEN {
-		return fmt.Sprintf(
-			"User %s\n\nPremium: %s\n\nProfile:\nGender: %s\nLooking for: %s\nAge: %d\nLanguage: %s",
-			data.PublicUUID,
-			formatPremiumStatus(data.PremiumActive, data.PremiumExpiresAt, lang),
-			profileGenderLabelEN(shared.Gender(data.Gender)),
-			profileSeekingLabelEN(shared.Gender(data.Seeking)),
-			data.Age,
-			languageLabel(data.Language),
-		)
-	}
-
-	return fmt.Sprintf(
-		"Пользователь %s\n\nPremium: %s\n\nАнкета:\nПол: %s\nИщу: %s\nВозраст: %d\nЯзык: %s",
-		data.PublicUUID,
-		formatPremiumStatus(data.PremiumActive, data.PremiumExpiresAt, lang),
-		genderLabelRU(shared.Gender(data.Gender)),
-		seekingLabelRU(shared.Gender(data.Seeking)),
-		data.Age,
-		languageLabel(data.Language),
-	)
+	return locales.T("profile.view.template", lang, map[string]string{
+		"uuid":          data.PublicUUID,
+		"premium":       formatPremiumStatus(data.PremiumActive, data.PremiumExpiresAt, lang),
+		"gender":        locales.ProfileGenderLabel(shared.Gender(data.Gender), lang),
+		"seeking":       locales.SeekingLabel(shared.Gender(data.Seeking), lang),
+		"age":           fmtInt(data.Age),
+		"language_code": locales.LanguageCode(shared.Language(data.Language)),
+	})
 }
 
 func ProfileViewButtons(labels Labels, premiumActive bool) [][]models.InlineKeyboardButton {
@@ -59,39 +47,13 @@ func ProfileViewButtons(labels Labels, premiumActive bool) [][]models.InlineKeyb
 
 func formatPremiumStatus(active bool, expiresAt *time.Time, lang shared.Language) string {
 	if !active || expiresAt == nil {
-		if lang == shared.LanguageEN {
-			return "none"
-		}
-		return "отсутствует"
+		return locales.T("profile.premium.none", lang, nil)
 	}
-
-	formatted := expiresAt.UTC().Format("02.01.2006 15:04") + " UTC+0"
-	if lang == shared.LanguageEN {
-		return "active until " + formatted
-	}
-	return "действует до " + formatted
+	return locales.T("profile.premium.active", lang, map[string]string{
+		"date": expiresAt.UTC().Format("02.01.2006 15:04"),
+	})
 }
 
-func languageLabel(code string) string {
-	switch shared.Language(code) {
-	case shared.LanguageEN:
-		return "EN"
-	default:
-		return "RU"
-	}
-}
-
-func profileGenderLabelEN(g shared.Gender) string {
-	switch g {
-	case shared.GenderMale:
-		return "Guy"
-	case shared.GenderFemale:
-		return "Girl"
-	default:
-		return string(g)
-	}
-}
-
-func profileSeekingLabelEN(g shared.Gender) string {
-	return profileGenderLabelEN(g)
+func fmtInt(v int16) string {
+	return fmt.Sprint(v)
 }

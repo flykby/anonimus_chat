@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/flykby/anonimus_chat/internal/bot/locales"
 	"github.com/flykby/anonimus_chat/internal/redis/regdraft"
 	"github.com/flykby/anonimus_chat/internal/shared"
 )
@@ -27,16 +28,89 @@ const (
 	CBConfirmRestart = "reg:confirm:restart"
 )
 
-const (
-	WelcomeText    = "Привет! Добро пожаловать в анонимный чат.\n\nЧтобы начать, заполни короткую анкету."
-	AgePrompt      = "Сколько тебе лет?\n\nНапиши число от 18 до 99."
-	AgeTooYoung    = "К сожалению, сервис доступен только с 18 лет."
-	AgeInvalid     = "Введи возраст числом от 18 до 99."
-	GenderPrompt   = "Твой пол:"
-	SeekingPrompt  = "Кого ты ищешь?"
-	LanguagePrompt = "Выбери язык интерфейса:"
-	UseButtonsHint = "Пожалуйста, выбери вариант кнопкой под сообщением."
-)
+func WelcomeText(lang shared.Language) string {
+	return locales.T("registration.welcome", lang, nil)
+}
+
+func WelcomeHint(lang shared.Language) string {
+	return locales.T("registration.welcome_hint", lang, nil)
+}
+
+func AgePrompt(lang shared.Language) string {
+	return locales.T("registration.age.prompt", lang, nil)
+}
+
+func AgeTooYoung(lang shared.Language) string {
+	return locales.T("registration.age.too_young", lang, nil)
+}
+
+func AgeInvalid(lang shared.Language) string {
+	return locales.T("registration.age.invalid", lang, nil)
+}
+
+func GenderPrompt(lang shared.Language) string {
+	return locales.T("registration.gender.prompt", lang, nil)
+}
+
+func SeekingPrompt(lang shared.Language) string {
+	return locales.T("registration.seeking.prompt", lang, nil)
+}
+
+func LanguagePrompt(lang shared.Language) string {
+	return locales.T("registration.language.prompt", lang, nil)
+}
+
+func UseButtonsHint(lang shared.Language) string {
+	return locales.T("registration.use_buttons_hint", lang, nil)
+}
+
+func StartFormButton(lang shared.Language) string {
+	return locales.T("registration.button.start_form", lang, nil)
+}
+
+func ConfirmYesButton(lang shared.Language) string {
+	return locales.T("registration.button.confirm_yes", lang, nil)
+}
+
+func ConfirmRestartButton(lang shared.Language) string {
+	return locales.T("registration.button.confirm_restart", lang, nil)
+}
+
+func GenderButtonMale(lang shared.Language) string {
+	return locales.T("registration.button.gender_male", lang, nil)
+}
+
+func GenderButtonFemale(lang shared.Language) string {
+	return locales.T("registration.button.gender_female", lang, nil)
+}
+
+func SeekingButtonMale(lang shared.Language) string {
+	return locales.T("registration.button.seeking_male", lang, nil)
+}
+
+func SeekingButtonFemale(lang shared.Language) string {
+	return locales.T("registration.button.seeking_female", lang, nil)
+}
+
+func LanguageButtonRU(lang shared.Language) string {
+	return locales.T("registration.button.lang_ru", lang, nil)
+}
+
+func LanguageButtonEN(lang shared.Language) string {
+	return locales.T("registration.button.lang_en", lang, nil)
+}
+
+func LoadDraftError(lang shared.Language) string {
+	return locales.T("registration.error.load_draft", lang, nil)
+}
+
+func LoadDraftErrorShort(lang shared.Language) string {
+	return locales.T("registration.error.load_draft_short", lang, nil)
+}
+
+func SaveProfileError(lang shared.Language) string {
+	return locales.T("registration.error.save_profile", lang, nil)
+}
 
 func ParseAge(text string) (int16, error) {
 	text = strings.TrimSpace(text)
@@ -56,47 +130,17 @@ func IsTooYoung(text string) bool {
 	return err == nil && age > 0 && age < 18
 }
 
-func GenderLabel(g shared.Gender) string {
-	switch g {
-	case shared.GenderMale:
-		return "Парень"
-	case shared.GenderFemale:
-		return "Девушка"
-	default:
-		return string(g)
-	}
-}
-
-func SeekingLabel(g shared.Gender) string {
-	switch g {
-	case shared.GenderMale:
-		return "Парня"
-	case shared.GenderFemale:
-		return "Девушку"
-	default:
-		return string(g)
-	}
-}
-
-func LanguageLabel(l shared.Language) string {
-	switch l {
-	case shared.LanguageRU:
-		return "Русский"
-	case shared.LanguageEN:
-		return "English"
-	default:
-		return string(l)
-	}
-}
-
 func ConfirmationText(d regdraft.Draft) string {
-	return fmt.Sprintf(
-		"Проверь анкету:\n\nВозраст: %d\nПол: %s\nИщу: %s\nЯзык: %s\n\nВсё верно?",
-		d.Age,
-		GenderLabel(d.Gender),
-		SeekingLabel(d.Seeking),
-		LanguageLabel(d.Language),
-	)
+	lang := d.Language
+	if lang == "" {
+		lang = shared.LanguageRU
+	}
+	return locales.T("registration.confirm.template", lang, map[string]string{
+		"age":      fmt.Sprint(d.Age),
+		"gender":   locales.GenderLabel(d.Gender, lang),
+		"seeking":  locales.SeekingLabel(d.Seeking, lang),
+		"language": locales.LanguageName(d.Language),
+	})
 }
 
 func ParseGenderCallback(data string) (shared.Gender, bool) {
@@ -119,4 +163,12 @@ func ParseLanguageCallback(data string) (shared.Language, bool) {
 	default:
 		return "", false
 	}
+}
+
+// RegLanguage returns draft language during registration or RU by default.
+func RegLanguage(d regdraft.Draft, ok bool) shared.Language {
+	if ok && d.Language != "" {
+		return d.Language
+	}
+	return shared.LanguageRU
 }

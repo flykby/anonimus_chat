@@ -62,3 +62,19 @@ func TestGetProfileViewMeMissingTelegramID(t *testing.T) {
 		t.Fatalf("status = %d, want 400", rec.Code)
 	}
 }
+
+func TestGetLanguageInvalidID(t *testing.T) {
+	t.Parallel()
+
+	h := &Handler{Users: nil}
+	mux := http.NewServeMux()
+	h.RegisterRoutes(mux)
+
+	req := httptest.NewRequest(http.MethodGet, "/users/by-telegram/abc/language", nil)
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", rec.Code)
+	}
+}

@@ -15,16 +15,16 @@
 | 025 | P2P relay & moderation |
 | 026 | Profile view |
 | 030 | Rules page |
+| 012 | i18n RU/EN |
 | 038 | AI echo stub |
 
 ## Очередь (делаем дальше)
 
 | Приоритет | # | Задача | Зачем |
 |-----------|---|--------|-------|
-| 1 | 012 | i18n RU/EN | Все строки в locale-файлах |
-| 2 | 027 | Edit profile | Смена анкеты |
-| 3 | 028 | Change language | Язык UI |
-| 4 | 029 | Delete profile | Удаление + anti-abuse |
+| 1 | 027 | Edit profile | Смена анкеты |
+| 2 | 028 | Change language | Язык UI |
+| 3 | 029 | Delete profile | Удаление + anti-abuse |
 
 ## Отложено (после Milestone 2)
 
@@ -53,6 +53,6 @@ flowchart TD
 
 - [ ] Все 4 комбинации gender/seeking дают рабочий dialog (AI echo или P2P relay)
 - [x] Профиль и правила — полноценные экраны
-- [ ] RU/EN переключается
+- [x] RU/EN переключается
 - [ ] End dialog работает для AI и P2P
 - [ ] Real AI не требуется

@@ -10,10 +10,12 @@ import (
 	"github.com/go-telegram/bot/models"
 
 	"github.com/flykby/anonimus_chat/internal/bot/apiclient"
+	"github.com/flykby/anonimus_chat/internal/bot/locales"
 	"github.com/flykby/anonimus_chat/internal/bot/menu"
 	"github.com/flykby/anonimus_chat/internal/bot/registration"
 	"github.com/flykby/anonimus_chat/internal/redis/fsm"
 	"github.com/flykby/anonimus_chat/internal/redis/regdraft"
+	"github.com/flykby/anonimus_chat/internal/shared"
 )
 
 type App struct {
@@ -58,7 +60,7 @@ func (a *App) Default(ctx context.Context, b *bot.Bot, update *models.Update) {
 	profile, registered, err := a.API.GetByTelegramID(ctx, telegramID)
 	if err != nil {
 		a.Logger.Error("check registration failed", "err", err, "user_id", telegramID)
-		a.sendText(ctx, b, update.Message.Chat.ID, "Сервис временно недоступен. Попробуй позже.")
+		a.sendText(ctx, b, update.Message.Chat.ID, locales.T("common.service_unavailable", shared.LanguageRU, nil))
 		return
 	}
 	if !registered {
@@ -92,7 +94,7 @@ func (a *App) start(ctx context.Context, b *bot.Bot, update *models.Update) {
 	profile, registered, err := a.API.GetByTelegramID(ctx, telegramID)
 	if err != nil {
 		a.Logger.Error("check registration failed", "err", err, "user_id", telegramID)
-		a.sendText(ctx, b, update.Message.Chat.ID, "Сервис временно недоступен. Попробуй позже.")
+		a.sendText(ctx, b, update.Message.Chat.ID, locales.T("common.service_unavailable", shared.LanguageRU, nil))
 		return
 	}
 	if registered {
@@ -148,25 +150,34 @@ func (a *App) onRegCallback(ctx context.Context, b *bot.Bot, update *models.Upda
 	}
 }
 
+func (a *App) registrationLang(ctx context.Context, telegramID int64) shared.Language {
+	draft, ok, err := a.Draft.Get(ctx, telegramID)
+	if err != nil || !ok {
+		return shared.LanguageRU
+	}
+	return registration.RegLanguage(draft, ok)
+}
+
 func (a *App) handleRegistrationMessage(ctx context.Context, b *bot.Bot, update *models.Update, state string) {
 	telegramID := update.Message.From.ID
 	chatID := update.Message.Chat.ID
+	lang := a.registrationLang(ctx, telegramID)
 
 	if state != registration.StateAge {
-		a.sendText(ctx, b, chatID, registration.UseButtonsHint)
+		a.sendText(ctx, b, chatID, registration.UseButtonsHint(lang))
 		a.resumeRegistration(ctx, b, chatID, telegramID, state)
 		return
 	}
 
 	text := update.Message.Text
 	if registration.IsTooYoung(text) {
-		a.sendText(ctx, b, chatID, registration.AgeTooYoung)
+		a.sendText(ctx, b, chatID, registration.AgeTooYoung(lang))
 		return
 	}
 
 	age, err := registration.ParseAge(text)
 	if err != nil {
-		a.sendText(ctx, b, chatID, registration.AgeInvalid)
+		a.sendText(ctx, b, chatID, registration.AgeInvalid(lang))
 		return
 	}
 
@@ -179,7 +190,7 @@ func (a *App) handleRegistrationMessage(ctx context.Context, b *bot.Bot, update 
 		return
 	}
 
-	a.sendGenderQuestion(ctx, b, chatID)
+	a.sendGenderQuestion(ctx, b, chatID, lang)
 }
 
 func (a *App) beginRegistration(ctx context.Context, b *bot.Bot, telegramID, chatID int64) {
@@ -198,11 +209,12 @@ func (a *App) beginRegistration(ctx context.Context, b *bot.Bot, telegramID, cha
 		a.Logger.Error("fsm set failed", "err", err, "user_id", telegramID)
 		return
 	}
-	a.sendReply(ctx, b, chatID, registration.AgePrompt, menu.RemoveKeyboard())
+	a.sendReply(ctx, b, chatID, registration.AgePrompt(a.registrationLang(ctx, telegramID)), menu.RemoveKeyboard())
 }
 
 func (a *App) handleGender(ctx context.Context, b *bot.Bot, telegramID, chatID int64, data string) {
-	if !a.requireState(ctx, b, chatID, telegramID, registration.StateGender) {
+	lang := a.registrationLang(ctx, telegramID)
+	if !a.requireState(ctx, b, chatID, telegramID, registration.StateGender, lang) {
 		return
 	}
 	gender, ok := registration.ParseGenderCallback(data)
@@ -217,11 +229,12 @@ func (a *App) handleGender(ctx context.Context, b *bot.Bot, telegramID, chatID i
 		a.Logger.Error("fsm set failed", "err", err, "user_id", telegramID)
 		return
 	}
-	a.sendSeekingQuestion(ctx, b, chatID)
+	a.sendSeekingQuestion(ctx, b, chatID, lang)
 }
 
 func (a *App) handleSeeking(ctx context.Context, b *bot.Bot, telegramID, chatID int64, data string) {
-	if !a.requireState(ctx, b, chatID, telegramID, registration.StateSeeking) {
+	lang := a.registrationLang(ctx, telegramID)
+	if !a.requireState(ctx, b, chatID, telegramID, registration.StateSeeking, lang) {
 		return
 	}
 	seeking, ok := registration.ParseGenderCallback(data)
@@ -236,11 +249,12 @@ func (a *App) handleSeeking(ctx context.Context, b *bot.Bot, telegramID, chatID 
 		a.Logger.Error("fsm set failed", "err", err, "user_id", telegramID)
 		return
 	}
-	a.sendLanguageQuestion(ctx, b, chatID)
+	a.sendLanguageQuestion(ctx, b, chatID, lang)
 }
 
 func (a *App) handleLanguage(ctx context.Context, b *bot.Bot, telegramID, chatID int64, data string) {
-	if !a.requireState(ctx, b, chatID, telegramID, registration.StateLanguage) {
+	lang := a.registrationLang(ctx, telegramID)
+	if !a.requireState(ctx, b, chatID, telegramID, registration.StateLanguage, lang) {
 		return
 	}
 	language, ok := registration.ParseLanguageCallback(data)
@@ -259,14 +273,16 @@ func (a *App) handleLanguage(ctx context.Context, b *bot.Bot, telegramID, chatID
 }
 
 func (a *App) confirmRegistration(ctx context.Context, b *bot.Bot, telegramID, chatID int64) {
-	if !a.requireState(ctx, b, chatID, telegramID, registration.StateConfirm) {
+	lang := a.registrationLang(ctx, telegramID)
+	if !a.requireState(ctx, b, chatID, telegramID, registration.StateConfirm, lang) {
 		return
 	}
 
 	draft, ok, err := a.Draft.Get(ctx, telegramID)
+	lang = registration.RegLanguage(draft, ok)
 	if err != nil || !ok {
 		a.Logger.Error("load draft failed", "err", err, "user_id", telegramID, "ok", ok)
-		a.sendText(ctx, b, chatID, "Не удалось прочитать анкету. Нажми /start и заполни заново.")
+		a.sendText(ctx, b, chatID, registration.LoadDraftError(lang))
 		return
 	}
 
@@ -279,7 +295,7 @@ func (a *App) confirmRegistration(ctx context.Context, b *bot.Bot, telegramID, c
 	})
 	if err != nil {
 		a.Logger.Error("register failed", "err", err, "user_id", telegramID)
-		a.sendText(ctx, b, chatID, "Не удалось сохранить анкету. Попробуй позже.")
+		a.sendText(ctx, b, chatID, registration.SaveProfileError(lang))
 		return
 	}
 
@@ -295,15 +311,16 @@ func (a *App) restartRegistration(ctx context.Context, b *bot.Bot, telegramID, c
 }
 
 func (a *App) resumeRegistration(ctx context.Context, b *bot.Bot, chatID, telegramID int64, state string) {
+	lang := a.registrationLang(ctx, telegramID)
 	switch state {
 	case registration.StateAge:
-		a.sendReply(ctx, b, chatID, registration.AgePrompt, menu.RemoveKeyboard())
+		a.sendReply(ctx, b, chatID, registration.AgePrompt(lang), menu.RemoveKeyboard())
 	case registration.StateGender:
-		a.sendGenderQuestion(ctx, b, chatID)
+		a.sendGenderQuestion(ctx, b, chatID, lang)
 	case registration.StateSeeking:
-		a.sendSeekingQuestion(ctx, b, chatID)
+		a.sendSeekingQuestion(ctx, b, chatID, lang)
 	case registration.StateLanguage:
-		a.sendLanguageQuestion(ctx, b, chatID)
+		a.sendLanguageQuestion(ctx, b, chatID, shared.LanguageRU)
 	case registration.StateConfirm:
 		a.sendConfirmation(ctx, b, telegramID, chatID)
 	default:
@@ -311,14 +328,14 @@ func (a *App) resumeRegistration(ctx context.Context, b *bot.Bot, chatID, telegr
 	}
 }
 
-func (a *App) requireState(ctx context.Context, b *bot.Bot, chatID, telegramID int64, want string) bool {
+func (a *App) requireState(ctx context.Context, b *bot.Bot, chatID, telegramID int64, want string, lang shared.Language) bool {
 	state, ok, err := a.FSM.Get(ctx, telegramID)
 	if err != nil {
 		a.Logger.Error("fsm get failed", "err", err, "user_id", telegramID)
 		return false
 	}
 	if !ok || state != want {
-		a.sendText(ctx, b, chatID, registration.UseButtonsHint)
+		a.sendText(ctx, b, chatID, registration.UseButtonsHint(lang))
 		if ok {
 			a.resumeRegistration(ctx, b, chatID, telegramID, state)
 		}
@@ -328,58 +345,63 @@ func (a *App) requireState(ctx context.Context, b *bot.Bot, chatID, telegramID i
 }
 
 func (a *App) sendWelcome(ctx context.Context, b *bot.Bot, chatID int64) {
-	a.sendReply(ctx, b, chatID, registration.WelcomeText, menu.RemoveKeyboard())
-	a.sendInline(ctx, b, chatID, "👇", [][]models.InlineKeyboardButton{
-		{{Text: "Заполнить анкету", CallbackData: registration.CBStart}},
+	lang := shared.LanguageRU
+	a.sendReply(ctx, b, chatID, registration.WelcomeText(lang), menu.RemoveKeyboard())
+	a.sendInline(ctx, b, chatID, registration.WelcomeHint(lang), [][]models.InlineKeyboardButton{
+		{{Text: registration.StartFormButton(lang), CallbackData: registration.CBStart}},
 	})
 }
 
-func (a *App) sendGenderQuestion(ctx context.Context, b *bot.Bot, chatID int64) {
-	a.sendInline(ctx, b, chatID, registration.GenderPrompt, genderButtons())
+func (a *App) sendGenderQuestion(ctx context.Context, b *bot.Bot, chatID int64, lang shared.Language) {
+	a.sendInline(ctx, b, chatID, registration.GenderPrompt(lang), genderButtons(lang))
 }
 
-func (a *App) sendSeekingQuestion(ctx context.Context, b *bot.Bot, chatID int64) {
-	a.sendInline(ctx, b, chatID, registration.SeekingPrompt, genderButtonsSeeking())
+func (a *App) sendSeekingQuestion(ctx context.Context, b *bot.Bot, chatID int64, lang shared.Language) {
+	a.sendInline(ctx, b, chatID, registration.SeekingPrompt(lang), genderButtonsSeeking(lang))
 }
 
-func (a *App) sendLanguageQuestion(ctx context.Context, b *bot.Bot, chatID int64) {
-	a.sendInline(ctx, b, chatID, registration.LanguagePrompt, [][]models.InlineKeyboardButton{
+func (a *App) sendLanguageQuestion(ctx context.Context, b *bot.Bot, chatID int64, lang shared.Language) {
+	if lang == "" {
+		lang = shared.LanguageRU
+	}
+	a.sendInline(ctx, b, chatID, registration.LanguagePrompt(lang), [][]models.InlineKeyboardButton{
 		{
-			{Text: "Русский", CallbackData: registration.CBLanguageRU},
-			{Text: "English", CallbackData: registration.CBLanguageEN},
+			{Text: registration.LanguageButtonRU(lang), CallbackData: registration.CBLanguageRU},
+			{Text: registration.LanguageButtonEN(lang), CallbackData: registration.CBLanguageEN},
 		},
 	})
 }
 
 func (a *App) sendConfirmation(ctx context.Context, b *bot.Bot, telegramID, chatID int64) {
 	draft, ok, err := a.Draft.Get(ctx, telegramID)
+	lang := registration.RegLanguage(draft, ok)
 	if err != nil || !ok {
 		a.Logger.Error("load draft for confirm failed", "err", err, "user_id", telegramID)
-		a.sendText(ctx, b, chatID, "Не удалось прочитать анкету. Нажми /start.")
+		a.sendText(ctx, b, chatID, registration.LoadDraftErrorShort(lang))
 		return
 	}
 	a.sendInline(ctx, b, chatID, registration.ConfirmationText(draft), [][]models.InlineKeyboardButton{
 		{
-			{Text: "Да, всё верно", CallbackData: registration.CBConfirmYes},
-			{Text: "Заполнить заново", CallbackData: registration.CBConfirmRestart},
+			{Text: registration.ConfirmYesButton(lang), CallbackData: registration.CBConfirmYes},
+			{Text: registration.ConfirmRestartButton(lang), CallbackData: registration.CBConfirmRestart},
 		},
 	})
 }
 
-func genderButtons() [][]models.InlineKeyboardButton {
+func genderButtons(lang shared.Language) [][]models.InlineKeyboardButton {
 	return [][]models.InlineKeyboardButton{
 		{
-			{Text: "Парень", CallbackData: registration.CBGenderMale},
-			{Text: "Девушка", CallbackData: registration.CBGenderFemale},
+			{Text: registration.GenderButtonMale(lang), CallbackData: registration.CBGenderMale},
+			{Text: registration.GenderButtonFemale(lang), CallbackData: registration.CBGenderFemale},
 		},
 	}
 }
 
-func genderButtonsSeeking() [][]models.InlineKeyboardButton {
+func genderButtonsSeeking(lang shared.Language) [][]models.InlineKeyboardButton {
 	return [][]models.InlineKeyboardButton{
 		{
-			{Text: "Парня", CallbackData: registration.CBSeekingMale},
-			{Text: "Девушку", CallbackData: registration.CBSeekingFemale},
+			{Text: registration.SeekingButtonMale(lang), CallbackData: registration.CBSeekingMale},
+			{Text: registration.SeekingButtonFemale(lang), CallbackData: registration.CBSeekingFemale},
 		},
 	}
 }

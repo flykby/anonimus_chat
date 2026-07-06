@@ -45,10 +45,16 @@ type profileViewResponse struct {
 	PremiumExpiresAt *time.Time `json:"premium_expires_at,omitempty"`
 }
 
+type languageResponse struct {
+	Language string `json:"language"`
+}
+
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /users/by-telegram/{telegram_id}", h.getByTelegram)
 	mux.HandleFunc("GET /users/by-telegram/{telegram_id}/profile", h.getProfileView)
+	mux.HandleFunc("GET /users/by-telegram/{telegram_id}/language", h.getLanguage)
 	mux.HandleFunc("GET /users/me/profile", h.getProfileViewMe)
+	mux.HandleFunc("GET /users/me/language", h.getLanguageMe)
 	mux.HandleFunc("POST /users/register", h.register)
 }
 
@@ -128,6 +134,37 @@ func (h *Handler) writeProfileView(w http.ResponseWriter, r *http.Request, teleg
 	}
 
 	writeJSON(w, http.StatusOK, toProfileViewResponse(up, premium))
+}
+
+func (h *Handler) getLanguageMe(w http.ResponseWriter, r *http.Request) {
+	telegramID, err := strconv.ParseInt(r.URL.Query().Get("telegram_id"), 10, 64)
+	if err != nil || telegramID <= 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "telegram_id required"})
+		return
+	}
+	h.writeLanguage(w, r, telegramID)
+}
+
+func (h *Handler) getLanguage(w http.ResponseWriter, r *http.Request) {
+	telegramID, err := strconv.ParseInt(r.PathValue("telegram_id"), 10, 64)
+	if err != nil || telegramID <= 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid telegram_id"})
+		return
+	}
+	h.writeLanguage(w, r, telegramID)
+}
+
+func (h *Handler) writeLanguage(w http.ResponseWriter, r *http.Request, telegramID int64) {
+	up, ok, err := h.Users.GetByTelegramID(r.Context(), telegramID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+		return
+	}
+	if !ok {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
+		return
+	}
+	writeJSON(w, http.StatusOK, languageResponse{Language: string(up.Profile.Language)})
 }
 
 func toProfileViewResponse(up db.UserProfile, premium db.PremiumStatus) profileViewResponse {

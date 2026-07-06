@@ -1,0 +1,107 @@
+registration:
+  welcome: "Привет! Добро пожаловать в анонимный чат.\n\nЧтобы начать, заполни короткую анкету."
+  welcome_hint: "👇"
+  button:
+    start_form: "Заполнить анкету"
+    confirm_yes: "Да, всё верно"
+    confirm_restart: "Заполнить заново"
+    gender_male: "Парень"
+    gender_female: "Девушка"
+    seeking_male: "Парня"
+    seeking_female: "Девушку"
+    lang_ru: "Русский"
+    lang_en: "English"
+  age:
+    prompt: "Сколько тебе лет?\n\nНапиши число от 18 до 99."
+    too_young: "К сожалению, сервис доступен только с 18 лет."
+    invalid: "Введи возраст числом от 18 до 99."
+  gender:
+    prompt: "Твой пол:"
+  seeking:
+    prompt: "Кого ты ищешь?"
+  language:
+    prompt: "Выбери язык интерфейса:"
+  use_buttons_hint: "Пожалуйста, выбери вариант кнопкой под сообщением."
+  confirm:
+    template: "Проверь анкету:\n\nВозраст: {age}\nПол: {gender}\nИщу: {seeking}\nЯзык: {language}\n\nВсё верно?"
+  error:
+    load_draft: "Не удалось прочитать анкету. Нажми /start и заполни заново."
+    load_draft_short: "Не удалось прочитать анкету. Нажми /start."
+    save_profile: "Не удалось сохранить анкету. Попробуй позже."
+
+common:
+  service_unavailable: "Сервис временно недоступен. Попробуй позже."
+
+menu:
+  title: "Главное меню"
+  start_chat: "Начать разговор"
+  profile: "Профиль"
+  rules: "Правила"
+  end_dialog: "Завершить диалог"
+  back: "← Назад"
+  start_chat_error: "Не удалось начать разговор. Попробуй позже."
+  start_chat_active: "У тебя уже есть активный диалог."
+  queue_cancel: "Отмена"
+  queue_matched: "Собеседник найден. Напиши первым сообщение."
+  queue_timeout: "Всё ещё ищем. Нажми «Отмена», чтобы выйти из очереди, или подожди ещё."
+  queue_cancelled: "Поиск отменён."
+  dialog_active_hint: "Диалог активен. Нажми «Завершить диалог», чтобы выйти."
+
+profile:
+  buy_premium: "Купить премиум"
+  extend_premium: "Продлить премиум"
+  edit: "Изменить анкету"
+  change_language: "Сменить язык"
+  delete: "Удалить профиль"
+  premium_stub: "Покупка премиума скоро будет доступна."
+  edit_stub: "Редактирование анкеты скоро будет доступно."
+  language_stub: "Смена языка скоро будет доступна."
+  delete_stub: "Удаление профиля скоро будет доступно."
+  view:
+    template: "Пользователь {uuid}\n\nPremium: {premium}\n\nАнкета:\nПол: {gender}\nИщу: {seeking}\nВозраст: {age}\nЯзык: {language_code}"
+  premium:
+    none: "отсутствует"
+    active: "действует до {date} UTC+0"
+  summary:
+    template: "Возраст: {age}\nПол: {gender}\nИщу: {seeking}"
+
+dialog:
+  end_confirm: "Завершить диалог?"
+  end_confirm_yes: "Завершить"
+  end_confirm_no: "Отменить"
+  end_cancelled: "Остаёмся в диалоге."
+  end_ended: "Диалог завершён."
+  partner_ended: "Собеседник завершил диалог."
+  partner_blocked: "Собеседник заблокировал тебя. Диалог завершён."
+
+p2p:
+  disallowed: "Контакты, геолокация и пересланные сообщения здесь запрещены."
+  rate_limited: "Слишком много сообщений. Подожди минуту."
+  photo_limit: "Лимит фото в этом диалоге исчерпан (макс. 3)."
+  relay_error: "Не удалось доставить сообщение. Попробуй ещё раз."
+  report: "Пожаловаться"
+  block: "Заблокировать"
+  report_sent: "Жалоба отправлена. Модераторы её проверят."
+  blocked: "Пользователь заблокирован. Диалог завершён."
+  moderation_hint: "При необходимости можно пожаловаться или заблокировать собеседника."
+
+queue:
+  waiting: "Вы находитесь в очереди на поиск собеседника.\n\nПользователей подходящих под ваши параметры: {count}\n\n{seeking}"
+  seeking_male: "Ищем лучшего из них"
+  seeking_female: "Ищем лучшую из них"
+
+gender:
+  male: "Парень"
+  female: "Девушка"
+  seeking_male: "Парня"
+  seeking_female: "Девушку"
+  guy: "Guy"
+  girl: "Girl"
+  label_male_en: "Male"
+  label_female_en: "Female"
+
+language:
+  ru: "Русский"
+  en: "English"
+  code_ru: "RU"
+  code_en: "EN"

@@ -1,0 +1,107 @@
+registration:
+  welcome: "Hi! Welcome to the anonymous chat.\n\nFill out a short profile to get started."
+  welcome_hint: "👇"
+  button:
+    start_form: "Fill out profile"
+    confirm_yes: "Yes, looks good"
+    confirm_restart: "Start over"
+    gender_male: "Guy"
+    gender_female: "Girl"
+    seeking_male: "Guy"
+    seeking_female: "Girl"
+    lang_ru: "Russian"
+    lang_en: "English"
+  age:
+    prompt: "How old are you?\n\nEnter a number from 18 to 99."
+    too_young: "Sorry, the service is available from age 18 only."
+    invalid: "Enter your age as a number from 18 to 99."
+  gender:
+    prompt: "Your gender:"
+  seeking:
+    prompt: "Who are you looking for?"
+  language:
+    prompt: "Choose interface language:"
+  use_buttons_hint: "Please choose an option using the buttons below."
+  confirm:
+    template: "Check your profile:\n\nAge: {age}\nGender: {gender}\nLooking for: {seeking}\nLanguage: {language}\n\nIs everything correct?"
+  error:
+    load_draft: "Could not read your profile draft. Tap /start and try again."
+    load_draft_short: "Could not read your profile draft. Tap /start."
+    save_profile: "Could not save your profile. Please try again later."
+
+common:
+  service_unavailable: "Service is temporarily unavailable. Please try again later."
+
+menu:
+  title: "Main menu"
+  start_chat: "Start chat"
+  profile: "Profile"
+  rules: "Rules"
+  end_dialog: "End dialog"
+  back: "← Back"
+  start_chat_error: "Could not start a chat. Please try again later."
+  start_chat_active: "You already have an active chat."
+  queue_cancel: "Cancel"
+  queue_matched: "Partner found. Send your first message."
+  queue_timeout: "Still searching. Tap Cancel to leave the queue or wait a bit longer."
+  queue_cancelled: "Search cancelled."
+  dialog_active_hint: "Chat is active. Tap End dialog to leave."
+
+profile:
+  buy_premium: "Buy premium"
+  extend_premium: "Extend premium"
+  edit: "Edit profile"
+  change_language: "Change language"
+  delete: "Delete profile"
+  premium_stub: "Premium purchase is coming soon."
+  edit_stub: "Profile editing is coming soon."
+  language_stub: "Language change is coming soon."
+  delete_stub: "Profile deletion is coming soon."
+  view:
+    template: "User {uuid}\n\nPremium: {premium}\n\nProfile:\nGender: {gender}\nLooking for: {seeking}\nAge: {age}\nLanguage: {language_code}"
+  premium:
+    none: "none"
+    active: "active until {date} UTC+0"
+  summary:
+    template: "Age: {age}\nGender: {gender}\nLooking for: {seeking}"
+
+dialog:
+  end_confirm: "End this chat?"
+  end_confirm_yes: "End chat"
+  end_confirm_no: "Cancel"
+  end_cancelled: "Staying in the chat."
+  end_ended: "Chat ended."
+  partner_ended: "Your partner ended the chat."
+  partner_blocked: "Your partner blocked you. The chat has ended."
+
+p2p:
+  disallowed: "Contacts, location, and forwards are not allowed in this chat."
+  rate_limited: "Too many messages. Please wait a minute."
+  photo_limit: "Photo limit reached for this chat (max 3)."
+  relay_error: "Could not deliver the message. Please try again."
+  report: "Report"
+  block: "Block"
+  report_sent: "Report sent. Moderators will review it."
+  blocked: "User blocked. Chat ended."
+  moderation_hint: "You can report or block your partner if needed."
+
+queue:
+  waiting: "You are in the queue looking for a partner.\n\nUsers matching your preferences: {count}\n\n{seeking}"
+  seeking_male: "Looking for the best match"
+  seeking_female: "Looking for the best match"
+
+gender:
+  male: "Guy"
+  female: "Girl"
+  seeking_male: "Guy"
+  seeking_female: "Girl"
+  guy: "Guy"
+  girl: "Girl"
+  label_male_en: "Male"
+  label_female_en: "Female"
+
+language:
+  ru: "Russian"
+  en: "English"
+  code_ru: "RU"
+  code_en: "EN"
