@@ -9,8 +9,8 @@ const (
 	TypeUserProfileUpdated Type = "user.profile_updated"
 	TypeUserDeleted        Type = "user.deleted"
 
-	TypeDialogStarted Type = "dialog.started"
-	TypeDialogEnded   Type = "dialog.ended"
+	TypeDialogStarted  Type = "dialog.started"
+	TypeDialogEnded    Type = "dialog.ended"
 	TypeDialogReported Type = "dialog.reported"
 
 	TypeMessageSent     Type = "message.sent"

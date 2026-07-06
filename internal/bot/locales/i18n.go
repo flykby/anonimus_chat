@@ -15,7 +15,7 @@ import (
 var files embed.FS
 
 var (
-	once   sync.Once
+	once    sync.Once
 	catalog map[shared.Language]map[string]string
 )
 

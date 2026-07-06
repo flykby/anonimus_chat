@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	ErrRateLimited = errors.New("rate limited")
-	ErrPhotoLimit  = errors.New("photo limit")
+	ErrRateLimited  = errors.New("rate limited")
+	ErrPhotoLimit   = errors.New("photo limit")
 	ErrInvalidRelay = errors.New("invalid relay")
 )
 

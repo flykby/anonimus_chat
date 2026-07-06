@@ -16,24 +16,24 @@ var (
 )
 
 type Config struct {
-	BotToken   string
-	APIURL     string
-	RedisURL   string
+	BotToken     string
+	APIURL       string
+	RedisURL     string
 	ReportChatID int64
-	HTTPAddr   string
-	LogLevel   slog.Level
-	HealthOnly bool
+	HTTPAddr     string
+	LogLevel     slog.Level
+	HealthOnly   bool
 }
 
 func Load() Config {
 	return Config{
-		BotToken:   env.Get("BOT_TOKEN", ""),
-		APIURL:     env.Get("API_URL", "http://api:8000"),
-		RedisURL:   env.Get("REDIS_URL", ""),
+		BotToken:     env.Get("BOT_TOKEN", ""),
+		APIURL:       env.Get("API_URL", "http://api:8000"),
+		RedisURL:     env.Get("REDIS_URL", ""),
 		ReportChatID: env.Int64("REPORT_CHAT_ID", 0),
-		HTTPAddr:   env.Get("HTTP_ADDR", ":8080"),
-		LogLevel:   env.ParseLogLevel(env.Get("LOG_LEVEL", "")),
-		HealthOnly: env.Bool("BOT_HEALTH_ONLY"),
+		HTTPAddr:     env.Get("HTTP_ADDR", ":8080"),
+		LogLevel:     env.ParseLogLevel(env.Get("LOG_LEVEL", "")),
+		HealthOnly:   env.Bool("BOT_HEALTH_ONLY"),
 	}
 }
 

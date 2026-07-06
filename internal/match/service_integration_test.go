@@ -9,8 +9,8 @@ import (
 	"github.com/flykby/anonimus_chat/internal/db"
 	"github.com/flykby/anonimus_chat/internal/events"
 	"github.com/flykby/anonimus_chat/internal/match"
-	redistest "github.com/flykby/anonimus_chat/internal/redis/redistest"
 	"github.com/flykby/anonimus_chat/internal/redis/matchqueue"
+	redistest "github.com/flykby/anonimus_chat/internal/redis/redistest"
 	"github.com/flykby/anonimus_chat/internal/redis/session"
 	"github.com/flykby/anonimus_chat/internal/shared"
 )

@@ -10,20 +10,20 @@ import (
 )
 
 const (
-	CBBack              = "menu:back"
-	CBStartChat         = "menu:start_chat"
-	CBProfile           = "menu:profile"
-	CBRules             = "menu:rules"
-	CBEndDialog         = "menu:end_dialog"
-	CBEndConfirm        = "end:confirm"
-	CBEndCancel         = "end:cancel"
-	CBQueueCancel       = "menu:queue_cancel"
-	CBP2PReport         = "p2p:report"
-	CBP2PBlock          = "p2p:block"
-	CBProfilePremium    = "menu:profile:premium"
-	CBProfileEdit       = "menu:profile:edit"
-	CBProfileLanguage   = "menu:profile:language"
-	CBProfileDelete     = "menu:profile:delete"
+	CBBack            = "menu:back"
+	CBStartChat       = "menu:start_chat"
+	CBProfile         = "menu:profile"
+	CBRules           = "menu:rules"
+	CBEndDialog       = "menu:end_dialog"
+	CBEndConfirm      = "end:confirm"
+	CBEndCancel       = "end:cancel"
+	CBQueueCancel     = "menu:queue_cancel"
+	CBP2PReport       = "p2p:report"
+	CBP2PBlock        = "p2p:block"
+	CBProfilePremium  = "menu:profile:premium"
+	CBProfileEdit     = "menu:profile:edit"
+	CBProfileLanguage = "menu:profile:language"
+	CBProfileDelete   = "menu:profile:delete"
 )
 
 type Action int
@@ -38,44 +38,44 @@ const (
 )
 
 type Labels struct {
-	MenuTitle            string
-	StartChat            string
-	Profile              string
-	Rules                string
-	EndDialog            string
-	Back                 string
-	StartChatError       string
-	StartChatActive      string
-	QueueCancel          string
-	QueueMatched         string
-	QueueTimeout         string
-	QueueCancelled       string
-	ProfileBuyPremium    string
-	ProfileExtendPremium string
-	ProfileEdit          string
+	MenuTitle             string
+	StartChat             string
+	Profile               string
+	Rules                 string
+	EndDialog             string
+	Back                  string
+	StartChatError        string
+	StartChatActive       string
+	QueueCancel           string
+	QueueMatched          string
+	QueueTimeout          string
+	QueueCancelled        string
+	ProfileBuyPremium     string
+	ProfileExtendPremium  string
+	ProfileEdit           string
 	ProfileChangeLanguage string
-	ProfileDelete        string
-	ProfilePremiumStub   string
-	ProfileEditStub      string
-	ProfileLanguageStub  string
-	ProfileDeleteStub    string
-	EndDialogConfirm     string
-	EndDialogConfirmYes  string
-	EndDialogConfirmNo   string
-	EndDialogCancelled   string
-	EndDialogEnded       string
-	PartnerEndedDialog   string
-	PartnerBlockedDialog string
-	P2PDisallowedMsg     string
-	P2PRateLimited       string
-	P2PPhotoLimit        string
-	P2PRelayError        string
-	P2PReport            string
-	P2PBlock             string
-	P2PReportSent        string
-	P2PBlocked           string
-	P2PModerationHint    string
-	DialogActiveHint     string
+	ProfileDelete         string
+	ProfilePremiumStub    string
+	ProfileEditStub       string
+	ProfileLanguageStub   string
+	ProfileDeleteStub     string
+	EndDialogConfirm      string
+	EndDialogConfirmYes   string
+	EndDialogConfirmNo    string
+	EndDialogCancelled    string
+	EndDialogEnded        string
+	PartnerEndedDialog    string
+	PartnerBlockedDialog  string
+	P2PDisallowedMsg      string
+	P2PRateLimited        string
+	P2PPhotoLimit         string
+	P2PRelayError         string
+	P2PReport             string
+	P2PBlock              string
+	P2PReportSent         string
+	P2PBlocked            string
+	P2PModerationHint     string
+	DialogActiveHint      string
 }
 
 func LabelsFor(lang shared.Language) Labels {

@@ -11,8 +11,8 @@ import (
 	"github.com/flykby/anonimus_chat/internal/events"
 	"github.com/flykby/anonimus_chat/internal/match"
 	"github.com/flykby/anonimus_chat/internal/redis/matchqueue"
-	redistest "github.com/flykby/anonimus_chat/internal/redis/redistest"
 	"github.com/flykby/anonimus_chat/internal/redis/ratelimit"
+	redistest "github.com/flykby/anonimus_chat/internal/redis/redistest"
 	"github.com/flykby/anonimus_chat/internal/shared"
 )
 
