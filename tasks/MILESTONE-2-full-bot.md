@@ -14,17 +14,17 @@
 | 024 | P2P matchmaking (M+M, F+M) |
 | 025 | P2P relay & moderation |
 | 026 | Profile view |
+| 030 | Rules page |
 | 038 | AI echo stub |
 
 ## Очередь (делаем дальше)
 
 | Приоритет | # | Задача | Зачем |
 |-----------|---|--------|-------|
-| 1 | 030 | Rules page | Вместо stub в меню «Правила» |
-| 2 | 012 | i18n RU/EN | Все строки в locale-файлах |
-| 3 | 027 | Edit profile | Смена анкеты |
-| 4 | 028 | Change language | Язык UI |
-| 5 | 029 | Delete profile | Удаление + anti-abuse |
+| 1 | 012 | i18n RU/EN | Все строки в locale-файлах |
+| 2 | 027 | Edit profile | Смена анкеты |
+| 3 | 028 | Change language | Язык UI |
+| 4 | 029 | Delete profile | Удаление + anti-abuse |
 
 ## Отложено (после Milestone 2)
 
@@ -52,7 +52,7 @@ flowchart TD
 ## Критерий закрытия Milestone 2
 
 - [ ] Все 4 комбинации gender/seeking дают рабочий dialog (AI echo или P2P relay)
-- [ ] Профиль и правила — полноценные экраны
+- [x] Профиль и правила — полноценные экраны
 - [ ] RU/EN переключается
 - [ ] End dialog работает для AI и P2P
 - [ ] Real AI не требуется

@@ -29,7 +29,7 @@ func (a *App) handleRegisteredMessage(ctx context.Context, b *bot.Bot, update *m
 	case menu.ActionProfile:
 		a.sendProfileView(ctx, b, update.Message.Chat.ID, update.Message.From.ID, lang)
 	case menu.ActionRules:
-		a.sendRulesStub(ctx, b, update.Message.Chat.ID, labels)
+		a.sendRulesPage(ctx, b, update.Message.Chat.ID, lang, labels)
 	case menu.ActionEndDialog:
 		a.sendReply(ctx, b, update.Message.Chat.ID, labels.MenuTitle, menu.MainKeyboard(labels))
 	default:
@@ -83,12 +83,6 @@ func (a *App) showMainMenu(ctx context.Context, b *bot.Bot, chatID int64, profil
 	}
 
 	a.sendReply(ctx, b, chatID, labels.MenuTitle, menu.MainKeyboard(labels))
-}
-
-func (a *App) sendRulesStub(ctx context.Context, b *bot.Bot, chatID int64, labels menu.Labels) {
-	a.sendInline(ctx, b, chatID, labels.RulesMsg, [][]models.InlineKeyboardButton{
-		{menu.BackButton(labels)},
-	})
 }
 
 func (a *App) promptRegistration(ctx context.Context, b *bot.Bot, chatID int64) {
