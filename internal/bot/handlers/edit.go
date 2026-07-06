@@ -16,7 +16,12 @@ import (
 
 func (a *App) sendEditMenu(ctx context.Context, b *bot.Bot, chatID, telegramID int64, lang shared.Language) {
 	_ = a.FSM.Delete(ctx, telegramID)
-	a.sendInline(ctx, b, chatID, edit.MenuTitle(lang), edit.MenuButtons(lang))
+	a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+		Text: edit.MenuTitle(lang),
+		Keyboard: models.InlineKeyboardMarkup{
+			InlineKeyboard: edit.MenuButtons(lang),
+		},
+	}})
 }
 
 func (a *App) onEditCallback(ctx context.Context, b *bot.Bot, update *models.Update) {
@@ -31,7 +36,6 @@ func (a *App) onEditCallback(ctx context.Context, b *bot.Bot, update *models.Upd
 	_, _ = b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
 		CallbackQueryID: update.CallbackQuery.ID,
 	})
-	a.clearInlineKeyboard(ctx, b, msg.Chat.ID, msg.ID)
 
 	profile, ok, err := a.API.GetByTelegramID(ctx, telegramID)
 	if err != nil || !ok {
@@ -49,27 +53,45 @@ func (a *App) onEditCallback(ctx context.Context, b *bot.Bot, update *models.Upd
 			a.Logger.Error("fsm set failed", "err", err, "user_id", telegramID)
 			return
 		}
-		a.sendReply(ctx, b, msg.Chat.ID, registration.AgePrompt(lang), menu.RemoveKeyboard())
+		a.showNavScreen(ctx, b, msg.Chat.ID, telegramID, []NavOutgoing{{
+			Text: registration.AgePrompt(lang),
+		}})
 	case edit.CBGender:
 		if profile.ActiveDialog {
-			a.sendReply(ctx, b, msg.Chat.ID, edit.ActiveDialog(lang), menu.MainKeyboard(labels))
+			a.showNavScreen(ctx, b, msg.Chat.ID, telegramID, []NavOutgoing{{
+				Text:     edit.ActiveDialog(lang),
+				Keyboard: menu.MainKeyboard(labels),
+			}})
 			return
 		}
 		if err := a.FSM.Set(ctx, telegramID, edit.StateGender); err != nil {
 			a.Logger.Error("fsm set failed", "err", err, "user_id", telegramID)
 			return
 		}
-		a.sendInline(ctx, b, msg.Chat.ID, registration.GenderPrompt(lang), edit.GenderButtons(lang))
+		a.showNavScreen(ctx, b, msg.Chat.ID, telegramID, []NavOutgoing{{
+			Text: registration.GenderPrompt(lang),
+			Keyboard: models.InlineKeyboardMarkup{
+				InlineKeyboard: edit.GenderButtons(lang),
+			},
+		}})
 	case edit.CBSeeking:
 		if profile.ActiveDialog {
-			a.sendReply(ctx, b, msg.Chat.ID, edit.ActiveDialog(lang), menu.MainKeyboard(labels))
+			a.showNavScreen(ctx, b, msg.Chat.ID, telegramID, []NavOutgoing{{
+				Text:     edit.ActiveDialog(lang),
+				Keyboard: menu.MainKeyboard(labels),
+			}})
 			return
 		}
 		if err := a.FSM.Set(ctx, telegramID, edit.StateSeeking); err != nil {
 			a.Logger.Error("fsm set failed", "err", err, "user_id", telegramID)
 			return
 		}
-		a.sendInline(ctx, b, msg.Chat.ID, registration.SeekingPrompt(lang), edit.SeekingButtons(lang))
+		a.showNavScreen(ctx, b, msg.Chat.ID, telegramID, []NavOutgoing{{
+			Text: registration.SeekingPrompt(lang),
+			Keyboard: models.InlineKeyboardMarkup{
+				InlineKeyboard: edit.SeekingButtons(lang),
+			},
+		}})
 	case edit.CBGenderMale, edit.CBGenderFemale:
 		a.handleEditGender(ctx, b, telegramID, msg.Chat.ID, data, lang)
 	case edit.CBSeekingMale, edit.CBSeekingFemale:
@@ -80,6 +102,7 @@ func (a *App) onEditCallback(ctx context.Context, b *bot.Bot, update *models.Upd
 func (a *App) handleEditMessage(ctx context.Context, b *bot.Bot, update *models.Update, state string) {
 	telegramID := update.Message.From.ID
 	chatID := update.Message.Chat.ID
+	a.deleteUserMessage(ctx, b, chatID, update.Message.ID)
 
 	profile, ok, err := a.API.GetByTelegramID(ctx, telegramID)
 	if err != nil || !ok {
@@ -146,7 +169,10 @@ func (a *App) saveProfileField(ctx context.Context, b *bot.Bot, telegramID, chat
 	_, err := a.API.UpdateProfile(ctx, req)
 	if errors.Is(err, apiclient.ErrActiveDialog) {
 		_ = a.FSM.Delete(ctx, telegramID)
-		a.sendReply(ctx, b, chatID, edit.ActiveDialog(lang), menu.MainKeyboard(labels))
+		a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+			Text:     edit.ActiveDialog(lang),
+			Keyboard: menu.MainKeyboard(labels),
+		}})
 		return
 	}
 	if err != nil {
@@ -156,7 +182,6 @@ func (a *App) saveProfileField(ctx context.Context, b *bot.Bot, telegramID, chat
 	}
 
 	_ = a.FSM.Delete(ctx, telegramID)
-	a.sendText(ctx, b, chatID, edit.Updated(lang))
 	a.sendProfileView(ctx, b, chatID, telegramID, lang)
 }
 
@@ -179,11 +204,23 @@ func (a *App) requireEditState(ctx context.Context, b *bot.Bot, chatID, telegram
 func (a *App) resumeEdit(ctx context.Context, b *bot.Bot, chatID, telegramID int64, state string, lang shared.Language) {
 	switch state {
 	case edit.StateAge:
-		a.sendReply(ctx, b, chatID, registration.AgePrompt(lang), menu.RemoveKeyboard())
+		a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+			Text: registration.AgePrompt(lang),
+		}})
 	case edit.StateGender:
-		a.sendInline(ctx, b, chatID, registration.GenderPrompt(lang), edit.GenderButtons(lang))
+		a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+			Text: registration.GenderPrompt(lang),
+			Keyboard: models.InlineKeyboardMarkup{
+				InlineKeyboard: edit.GenderButtons(lang),
+			},
+		}})
 	case edit.StateSeeking:
-		a.sendInline(ctx, b, chatID, registration.SeekingPrompt(lang), edit.SeekingButtons(lang))
+		a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+			Text: registration.SeekingPrompt(lang),
+			Keyboard: models.InlineKeyboardMarkup{
+				InlineKeyboard: edit.SeekingButtons(lang),
+			},
+		}})
 	default:
 		a.sendEditMenu(ctx, b, chatID, telegramID, lang)
 	}

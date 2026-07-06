@@ -11,30 +11,31 @@ import (
 	"github.com/flykby/anonimus_chat/internal/shared"
 )
 
-func (a *App) sendRulesPage(ctx context.Context, b *bot.Bot, chatID int64, lang shared.Language, labels menu.Labels) {
+func (a *App) sendRulesPage(ctx context.Context, b *bot.Bot, chatID, telegramID int64, lang shared.Language, labels menu.Labels) {
 	messages, err := rules.Messages(lang)
 	if err != nil {
 		a.Logger.Error("load rules failed", "err", err, "lang", lang)
-		a.sendReply(ctx, b, chatID, labels.StartChatError, menu.MainKeyboard(labels))
+		a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+			Text:     labels.StartChatError,
+			Keyboard: menu.MainKeyboard(labels),
+		}})
 		return
 	}
 
+	out := make([]NavOutgoing, 0, len(messages))
 	for i, text := range messages {
-		params := &bot.SendMessageParams{
-			ChatID:    chatID,
+		msg := NavOutgoing{
 			Text:      text,
 			ParseMode: models.ParseModeHTML,
 		}
 		if i == len(messages)-1 {
-			params.ReplyMarkup = models.InlineKeyboardMarkup{
+			msg.Keyboard = models.InlineKeyboardMarkup{
 				InlineKeyboard: [][]models.InlineKeyboardButton{
 					{menu.BackButton(labels)},
 				},
 			}
 		}
-		if _, err := b.SendMessage(ctx, params); err != nil {
-			a.Logger.Error("send rules message failed", "err", err, "chat_id", chatID, "part", i)
-			return
-		}
+		out = append(out, msg)
 	}
+	a.showNavScreen(ctx, b, chatID, telegramID, out)
 }

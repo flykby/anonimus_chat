@@ -17,4 +17,7 @@ func TestKeyFormats(t *testing.T) {
 	if got := FSM(99); got != "anonimus:fsm:99" {
 		t.Fatalf("FSM = %q", got)
 	}
+	if got := NavScreen(7); got != "anonimus:navscreen:7" {
+		t.Fatalf("NavScreen = %q", got)
+	}
 }

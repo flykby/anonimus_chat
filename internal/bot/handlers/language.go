@@ -12,8 +12,13 @@ import (
 	"github.com/flykby/anonimus_chat/internal/shared"
 )
 
-func (a *App) sendLanguageChoice(ctx context.Context, b *bot.Bot, chatID int64, lang shared.Language) {
-	a.sendInline(ctx, b, chatID, language.Prompt(lang), language.ChoiceButtons(lang))
+func (a *App) sendLanguageChoice(ctx context.Context, b *bot.Bot, chatID, telegramID int64, lang shared.Language) {
+	a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+		Text: language.Prompt(lang),
+		Keyboard: models.InlineKeyboardMarkup{
+			InlineKeyboard: language.ChoiceButtons(lang),
+		},
+	}})
 }
 
 func (a *App) onLangCallback(ctx context.Context, b *bot.Bot, update *models.Update) {
@@ -28,7 +33,6 @@ func (a *App) onLangCallback(ctx context.Context, b *bot.Bot, update *models.Upd
 	_, _ = b.AnswerCallbackQuery(ctx, &bot.AnswerCallbackQueryParams{
 		CallbackQueryID: update.CallbackQuery.ID,
 	})
-	a.clearInlineKeyboard(ctx, b, msg.Chat.ID, msg.ID)
 
 	chosen, ok := language.ParseCallback(data)
 	if !ok {
@@ -54,10 +58,14 @@ func (a *App) onLangCallback(ctx context.Context, b *bot.Bot, update *models.Upd
 	})
 	if err != nil {
 		a.Logger.Error("update language failed", "err", err, "user_id", telegramID)
-		a.sendText(ctx, b, msg.Chat.ID, language.SaveError(currentLang))
+		a.showNavScreen(ctx, b, msg.Chat.ID, telegramID, []NavOutgoing{{
+			Text: language.SaveError(currentLang),
+			Keyboard: models.InlineKeyboardMarkup{
+				InlineKeyboard: language.ChoiceButtons(currentLang),
+			},
+		}})
 		return
 	}
 
-	a.sendText(ctx, b, msg.Chat.ID, language.Changed(chosen))
 	a.sendProfileView(ctx, b, msg.Chat.ID, telegramID, chosen)
 }

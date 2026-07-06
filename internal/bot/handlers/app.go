@@ -15,6 +15,7 @@ import (
 	"github.com/flykby/anonimus_chat/internal/bot/menu"
 	"github.com/flykby/anonimus_chat/internal/bot/registration"
 	"github.com/flykby/anonimus_chat/internal/redis/fsm"
+	"github.com/flykby/anonimus_chat/internal/redis/navscreen"
 	"github.com/flykby/anonimus_chat/internal/redis/regdraft"
 	"github.com/flykby/anonimus_chat/internal/shared"
 )
@@ -23,6 +24,7 @@ type App struct {
 	Logger       *slog.Logger
 	FSM          *fsm.Store
 	Draft        *regdraft.Store
+	NavScreen    *navscreen.Store
 	API          *apiclient.Client
 	ReportChatID int64
 	queueWait    sync.Map
@@ -106,7 +108,7 @@ func (a *App) start(ctx context.Context, b *bot.Bot, update *models.Update) {
 		return
 	}
 	if registered {
-		a.showMainMenu(ctx, b, update.Message.Chat.ID, profile)
+		a.showMainMenu(ctx, b, update.Message.Chat.ID, update.Message.From.ID, profile)
 		return
 	}
 
@@ -208,7 +210,7 @@ func (a *App) beginRegistration(ctx context.Context, b *bot.Bot, telegramID, cha
 		return
 	}
 	if registered {
-		a.showMainMenu(ctx, b, chatID, profile)
+		a.showMainMenu(ctx, b, chatID, telegramID, profile)
 		return
 	}
 
@@ -309,7 +311,7 @@ func (a *App) confirmRegistration(ctx context.Context, b *bot.Bot, telegramID, c
 
 	_ = a.FSM.Delete(ctx, telegramID)
 	_ = a.Draft.Delete(ctx, telegramID)
-	a.showMainMenu(ctx, b, chatID, profile)
+	a.showMainMenu(ctx, b, chatID, telegramID, profile)
 }
 
 func (a *App) restartRegistration(ctx context.Context, b *bot.Bot, telegramID, chatID int64) {

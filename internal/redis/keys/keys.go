@@ -42,3 +42,7 @@ func BlockedPair(userA, userB int64) string {
 func DialogContext(dialogID int64) string {
 	return fmt.Sprintf("%s:dialog_ctx:%d", Prefix, dialogID)
 }
+
+func NavScreen(telegramID int64) string {
+	return fmt.Sprintf("%s:navscreen:%d", Prefix, telegramID)
+}
