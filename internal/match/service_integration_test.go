@@ -28,7 +28,7 @@ func TestIntegrationStartAIRoute(t *testing.T) {
 	emitter := events.NewEmitter(nil)
 	users := db.NewUsersRepo(pool, emitter)
 	dialogs := db.NewDialogsRepo(pool)
-	svc := match.NewService(pool, users, dialogs, nil, emitter)
+	svc := match.NewService(pool, users, dialogs, nil, emitter, nil)
 
 	telegramID := time.Now().UnixNano()
 	up, err := users.Register(ctx, db.RegisterInput{
@@ -80,7 +80,7 @@ func TestIntegrationStartRejectsActiveDialog(t *testing.T) {
 	emitter := events.NewEmitter(nil)
 	users := db.NewUsersRepo(pool, emitter)
 	dialogs := db.NewDialogsRepo(pool)
-	svc := match.NewService(pool, users, dialogs, nil, emitter)
+	svc := match.NewService(pool, users, dialogs, nil, emitter, nil)
 
 	telegramID := time.Now().UnixNano() + 1
 	up, err := users.Register(ctx, db.RegisterInput{

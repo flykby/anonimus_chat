@@ -28,6 +28,7 @@ func (a *App) Register(b *bot.Bot) {
 	b.RegisterHandler(bot.HandlerTypeMessageText, "/start", bot.MatchTypeExact, a.start)
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "reg:", bot.MatchTypePrefix, a.onRegCallback)
 	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "menu:", bot.MatchTypePrefix, a.onMenuCallback)
+	b.RegisterHandler(bot.HandlerTypeCallbackQueryData, "end:", bot.MatchTypePrefix, a.onEndCallback)
 }
 
 func (a *App) Default(ctx context.Context, b *bot.Bot, update *models.Update) {

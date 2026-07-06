@@ -1,6 +1,6 @@
 # 015. End dialog flow
 
-**Статус:** todo  
+**Статус:** done  
 **Фаза:** dialog  
 **Зависимости:** 011, 008, 007
 
@@ -21,19 +21,20 @@
 
 ## Acceptance criteria
 
-- [ ] Кнопка видна только во время активного диалога
-- [ ] Confirm/Cancel работают корректно
-- [ ] После завершения пользователь в главном меню
-- [ ] P2P-партнёр получает уведомление и тоже возвращается в меню
-- [ ] Повторное завершение уже закрытого диалога — no-op
-- [ ] `ended_at` и `end_reason` записаны в `dialogs`
+- [x] Кнопка видна только во время активного диалога
+- [x] Confirm/Cancel работают корректно
+- [x] После завершения пользователь в главном меню
+- [x] P2P-партнёр получает уведомление и тоже возвращается в меню
+- [x] Повторное завершение уже закрытого диалога — no-op
+- [x] `ended_at` и `end_reason` записаны в `dialogs`
 
 ## Технические заметки
 
-- Inline keyboard для confirm: `end:confirm`, `end:cancel`
-- duration_sec = `ended_at - started_at`
-- message_count из `dialog_messages` или счётчик в Redis
-- При end P2P — end dialog для обоих user_id атомарно
+- Inline keyboard: `end:confirm`, `end:cancel`
+- `internal/dialog/service.go` — End(), P2P partner end in one tx
+- Profile API: `active_dialog_id` для bot
+- Redis session set on AI match complete; cleared on end
+- AI-initiated end — задача 018
 
 ## Out of scope
 

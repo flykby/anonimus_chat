@@ -15,7 +15,7 @@ func (a *App) handleRegisteredMessage(ctx context.Context, b *bot.Bot, update *m
 	labels := menu.LabelsFor(lang)
 
 	if profile.ActiveDialog {
-		a.handleDialogMessage(ctx, b, update, labels)
+		a.handleDialogMessage(ctx, b, update, profile, labels)
 		return
 	}
 
@@ -34,15 +34,6 @@ func (a *App) handleRegisteredMessage(ctx context.Context, b *bot.Bot, update *m
 	default:
 		a.showMainMenu(ctx, b, update.Message.Chat.ID, profile)
 	}
-}
-
-func (a *App) handleDialogMessage(ctx context.Context, b *bot.Bot, update *models.Update, labels menu.Labels) {
-	action, _ := menu.ActionForText(update.Message.Text)
-	if action == menu.ActionEndDialog {
-		a.sendReply(ctx, b, update.Message.Chat.ID, labels.EndDialogMsg, menu.DialogKeyboard(labels))
-		return
-	}
-	a.sendReply(ctx, b, update.Message.Chat.ID, labels.EndDialogMsg, menu.DialogKeyboard(labels))
 }
 
 func (a *App) onMenuCallback(ctx context.Context, b *bot.Bot, update *models.Update) {
@@ -77,7 +68,7 @@ func (a *App) showMainMenu(ctx context.Context, b *bot.Bot, chatID int64, profil
 	labels := menu.LabelsFor(lang)
 
 	if profile.ActiveDialog {
-		a.sendReply(ctx, b, chatID, labels.EndDialogMsg, menu.DialogKeyboard(labels))
+		a.sendReply(ctx, b, chatID, labels.DialogActiveHint, menu.DialogKeyboard(labels))
 		return
 	}
 

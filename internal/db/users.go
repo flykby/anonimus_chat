@@ -62,6 +62,39 @@ func (r *UsersRepo) GetByTelegramID(ctx context.Context, telegramID int64) (User
 	return up, true, nil
 }
 
+func (r *UsersRepo) GetByUserID(ctx context.Context, userID int64) (UserProfile, bool, error) {
+	const q = `
+		SELECT u.id, u.telegram_id, u.public_uuid::text, u.created_at, u.deleted_at,
+		       p.gender, p.seeking, p.age, p.language
+		FROM users u
+		JOIN profiles p ON p.user_id = u.id
+		WHERE u.id = $1 AND u.deleted_at IS NULL
+	`
+	var up UserProfile
+	var deletedAt *time.Time
+	row := r.pool.QueryRow(ctx, q, userID)
+	err := row.Scan(
+		&up.User.ID,
+		&up.User.TelegramID,
+		&up.User.PublicUUID,
+		&up.User.CreatedAt,
+		&deletedAt,
+		&up.Profile.Gender,
+		&up.Profile.Seeking,
+		&up.Profile.Age,
+		&up.Profile.Language,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return UserProfile{}, false, nil
+	}
+	if err != nil {
+		return UserProfile{}, false, fmt.Errorf("get user by id: %w", err)
+	}
+	up.User.DeletedAt = deletedAt
+	up.Profile.UserID = up.User.ID
+	return up, true, nil
+}
+
 func (r *UsersRepo) HasActiveDialog(ctx context.Context, userID int64) (bool, error) {
 	var exists bool
 	err := r.pool.QueryRow(ctx, `

@@ -4,12 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/flykby/anonimus_chat/internal/db"
 	"github.com/flykby/anonimus_chat/internal/events"
 	"github.com/flykby/anonimus_chat/internal/redis/matchqueue"
+	"github.com/flykby/anonimus_chat/internal/redis/session"
+	"github.com/flykby/anonimus_chat/internal/shared"
 )
 
 var (
@@ -28,11 +31,12 @@ type StartResponse struct {
 }
 
 type Service struct {
-	pool    *pgxpool.Pool
-	users   *db.UsersRepo
-	dialogs *db.DialogsRepo
-	queue   *matchqueue.Store
-	events  *events.Emitter
+	pool     *pgxpool.Pool
+	users    *db.UsersRepo
+	dialogs  *db.DialogsRepo
+	queue    *matchqueue.Store
+	events   *events.Emitter
+	sessions *session.Store
 }
 
 func NewService(
@@ -41,13 +45,15 @@ func NewService(
 	dialogs *db.DialogsRepo,
 	queue *matchqueue.Store,
 	emitter *events.Emitter,
+	sessions *session.Store,
 ) *Service {
 	return &Service{
-		pool:    pool,
-		users:   users,
-		dialogs: dialogs,
-		queue:   queue,
-		events:  emitter,
+		pool:     pool,
+		users:    users,
+		dialogs:  dialogs,
+		queue:    queue,
+		events:   emitter,
+		sessions: sessions,
 	}
 }
 
@@ -161,6 +167,17 @@ func (s *Service) CompleteAI(ctx context.Context, telegramID int64, waitSec int)
 
 	if err := tx.Commit(ctx); err != nil {
 		return StartResponse{}, fmt.Errorf("commit tx: %w", err)
+	}
+
+	if s.sessions != nil {
+		startedAt := time.Now().UTC()
+		if err := s.sessions.Set(ctx, up.User.ID, session.ActiveSession{
+			DialogID:  dialogID,
+			Type:      shared.DialogTypeAI,
+			StartedAt: startedAt,
+		}); err != nil {
+			return StartResponse{}, fmt.Errorf("set session: %w", err)
+		}
 	}
 
 	return StartResponse{

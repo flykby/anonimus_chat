@@ -13,14 +13,18 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	goredis "github.com/redis/go-redis/v9"
 
+	dialogapi "github.com/flykby/anonimus_chat/internal/api/dialogs"
 	matchapi "github.com/flykby/anonimus_chat/internal/api/match"
 	"github.com/flykby/anonimus_chat/internal/api/users"
 	"github.com/flykby/anonimus_chat/internal/db"
+	"github.com/flykby/anonimus_chat/internal/dialog"
 	"github.com/flykby/anonimus_chat/internal/events"
 	"github.com/flykby/anonimus_chat/internal/match"
 	"github.com/flykby/anonimus_chat/internal/platform/env"
 	iredis "github.com/flykby/anonimus_chat/internal/redis"
+	"github.com/flykby/anonimus_chat/internal/redis/dialogctx"
 	"github.com/flykby/anonimus_chat/internal/redis/matchqueue"
+	"github.com/flykby/anonimus_chat/internal/redis/session"
 )
 
 func main() {
@@ -69,12 +73,18 @@ func main() {
 		usersRepo := db.NewUsersRepo(pool, emitter)
 		dialogsRepo := db.NewDialogsRepo(pool)
 		var queue *matchqueue.Store
+		var sessions *session.Store
+		var dctx *dialogctx.Store
 		if rdb != nil {
 			queue = matchqueue.New(rdb)
+			sessions = session.New(rdb)
+			dctx = dialogctx.New(rdb)
 		}
-		matchSvc := match.NewService(pool, usersRepo, dialogsRepo, queue, emitter)
-		(&users.Handler{Users: usersRepo}).RegisterRoutes(mux)
+		matchSvc := match.NewService(pool, usersRepo, dialogsRepo, queue, emitter, sessions)
+		dialogSvc := dialog.NewService(pool, dialogsRepo, usersRepo, emitter, sessions, dctx)
+		(&users.Handler{Users: usersRepo, Dialogs: dialogsRepo}).RegisterRoutes(mux)
 		(&matchapi.Handler{Match: matchSvc}).RegisterRoutes(mux)
+		(&dialogapi.Handler{Dialogs: dialogSvc, Users: usersRepo}).RegisterRoutes(mux)
 	}
 
 	srv := &http.Server{
