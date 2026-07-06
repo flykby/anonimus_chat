@@ -37,16 +37,22 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	srv := newHealthServer(cfg.HTTPAddr)
-	go runHealthServer(ctx, logger, srv)
-
 	if cfg.HealthOnly {
+		srv := newHealthServer(cfg.HTTPAddr)
+		go runHealthServer(ctx, logger, srv)
 		logger.Info("bot ready", "mode", "health_only")
 		<-ctx.Done()
 		shutdownHealthServer(logger, srv)
 		return
 	}
 
+	if cfg.UseWebhook() {
+		runTelegramBot(ctx, logger, cfg)
+		return
+	}
+
+	srv := newHealthServer(cfg.HTTPAddr)
+	go runHealthServer(ctx, logger, srv)
 	runTelegramBot(ctx, logger, cfg)
 	shutdownHealthServer(logger, srv)
 }
