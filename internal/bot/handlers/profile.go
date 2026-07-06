@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/go-telegram/bot"
+	"github.com/go-telegram/bot/models"
 
 	"github.com/flykby/anonimus_chat/internal/bot/menu"
 	"github.com/flykby/anonimus_chat/internal/shared"
@@ -13,7 +14,11 @@ func (a *App) sendProfileView(ctx context.Context, b *bot.Bot, chatID, telegramI
 	view, err := a.API.GetProfileView(ctx, telegramID)
 	if err != nil {
 		a.Logger.Error("load profile view failed", "err", err, "user_id", telegramID)
-		a.sendReply(ctx, b, chatID, menu.LabelsFor(lang).StartChatError, menu.MainKeyboard(menu.LabelsFor(lang)))
+		labels := menu.LabelsFor(lang)
+		a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+			Text:     labels.StartChatError,
+			Keyboard: menu.MainKeyboard(labels),
+		}})
 		return
 	}
 
@@ -29,25 +34,28 @@ func (a *App) sendProfileView(ctx context.Context, b *bot.Bot, chatID, telegramI
 		PremiumExpiresAt: view.PremiumExpiresAt,
 	}, lang)
 
-	a.sendInline(ctx, b, chatID, text, menu.ProfileViewButtons(labels, view.PremiumActive))
+	a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+		Text: text,
+		Keyboard: models.InlineKeyboardMarkup{
+			InlineKeyboard: menu.ProfileViewButtons(labels, view.PremiumActive),
+		},
+	}})
 }
 
 func (a *App) handleProfileCallback(ctx context.Context, b *bot.Bot, chatID, telegramID int64, data string, labels menu.Labels, lang shared.Language) {
-	var stub string
 	switch data {
 	case menu.CBProfilePremium:
-		stub = labels.ProfilePremiumStub
+		a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+			Text:     labels.ProfilePremiumStub,
+			Keyboard: menu.MainKeyboard(labels),
+		}})
 	case menu.CBProfileEdit:
 		a.sendEditMenu(ctx, b, chatID, telegramID, lang)
-		return
 	case menu.CBProfileLanguage:
-		a.sendLanguageChoice(ctx, b, chatID, lang)
-		return
+		a.sendLanguageChoice(ctx, b, chatID, telegramID, lang)
 	case menu.CBProfileDelete:
-		a.sendDeleteConfirm1(ctx, b, chatID, lang)
-		return
+		a.sendDeleteConfirm1(ctx, b, chatID, telegramID, lang)
 	default:
 		return
 	}
-	a.sendReply(ctx, b, chatID, stub, menu.MainKeyboard(labels))
 }

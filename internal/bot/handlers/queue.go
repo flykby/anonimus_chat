@@ -26,17 +26,24 @@ const (
 func (a *App) handleStartChat(ctx context.Context, b *bot.Bot, chatID, telegramID int64, profile apiclient.Profile, labels menu.Labels) {
 	result, err := a.API.StartMatch(ctx, telegramID)
 	if errors.Is(err, apiclient.ErrActiveDialog) {
-		a.sendReply(ctx, b, chatID, labels.StartChatActive, menu.DialogKeyboard(labels))
+		a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+			Text:     labels.StartChatActive,
+			Keyboard: menu.DialogKeyboard(labels),
+		}})
 		return
 	}
 	if err != nil {
 		a.Logger.Error("start match failed", "err", err, "user_id", telegramID)
-		a.sendReply(ctx, b, chatID, labels.StartChatError, menu.MainKeyboard(labels))
+		a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+			Text:     labels.StartChatError,
+			Keyboard: menu.MainKeyboard(labels),
+		}})
 		return
 	}
 
 	switch result.Status {
 	case "matched":
+		a.clearNavScreen(ctx, b, chatID, telegramID)
 		a.sendReply(ctx, b, chatID, labels.QueueMatched, menu.DialogKeyboard(labels))
 		if result.Route == "p2p" {
 			a.sendP2PModerationHint(ctx, b, chatID, labels)
@@ -44,12 +51,18 @@ func (a *App) handleStartChat(ctx context.Context, b *bot.Bot, chatID, telegramI
 	case "searching", "queued":
 		count := queueDisplayCount(result)
 		gender := shared.Gender(profile.Gender)
-		a.sendReply(ctx, b, chatID, menu.QueueWaitingText(count, gender, menu.ParseLanguage(profile.Language)), menu.QueueWaitingKeyboard(labels))
+		a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+			Text:     menu.QueueWaitingText(count, gender, menu.ParseLanguage(profile.Language)),
+			Keyboard: menu.QueueWaitingKeyboard(labels),
+		}})
 		waitCtx, cancel := context.WithCancel(context.Background())
 		a.setQueueWaitCancel(telegramID, cancel)
 		go a.runQueueWait(waitCtx, b, chatID, telegramID, profile, result, labels)
 	default:
-		a.sendReply(ctx, b, chatID, labels.StartChatError, menu.MainKeyboard(labels))
+		a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+			Text:     labels.StartChatError,
+			Keyboard: menu.MainKeyboard(labels),
+		}})
 	}
 }
 
@@ -60,7 +73,15 @@ func (a *App) handleCancelQueue(ctx context.Context, b *bot.Bot, chatID, telegra
 	if err := a.API.CancelMatch(ctx, telegramID); err != nil {
 		a.Logger.Warn("cancel match failed", "err", err, "user_id", telegramID)
 	}
-	a.sendReply(ctx, b, chatID, labels.QueueCancelled, menu.MainKeyboard(labels))
+	profile, ok, err := a.API.GetByTelegramID(ctx, telegramID)
+	if err != nil || !ok {
+		a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+			Text:     labels.QueueCancelled,
+			Keyboard: menu.MainKeyboard(labels),
+		}})
+		return
+	}
+	a.showMainMenu(ctx, b, chatID, telegramID, profile)
 }
 
 func (a *App) runQueueWait(
@@ -97,10 +118,14 @@ func (a *App) runAIQueueWait(ctx context.Context, b *bot.Bot, chatID, telegramID
 	}
 	if err != nil {
 		a.Logger.Error("complete match failed", "err", err, "user_id", telegramID)
-		a.sendReply(ctx, b, chatID, labels.StartChatError, menu.MainKeyboard(labels))
+		a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+			Text:     labels.StartChatError,
+			Keyboard: menu.MainKeyboard(labels),
+		}})
 		return
 	}
 
+	a.clearNavScreen(ctx, b, chatID, telegramID)
 	a.sendReply(ctx, b, chatID, labels.QueueMatched, menu.DialogKeyboard(labels))
 	_ = result
 }
@@ -120,7 +145,10 @@ func (a *App) runP2PQueueWait(ctx context.Context, b *bot.Bot, chatID, telegramI
 		case <-ticker.C:
 			if !timedOut && time.Now().After(timeoutAt) {
 				timedOut = true
-				a.sendReply(ctx, b, chatID, labels.QueueTimeout, menu.QueueWaitingKeyboard(labels))
+				a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+					Text:     labels.QueueTimeout,
+					Keyboard: menu.QueueWaitingKeyboard(labels),
+				}})
 			}
 
 			result, err := a.API.PollMatch(ctx, telegramID)
@@ -132,6 +160,7 @@ func (a *App) runP2PQueueWait(ctx context.Context, b *bot.Bot, chatID, telegramI
 				continue
 			}
 			if result.Status == "matched" {
+				a.clearNavScreen(ctx, b, chatID, telegramID)
 				a.sendReply(ctx, b, chatID, labels.QueueMatched, menu.DialogKeyboard(labels))
 				a.sendP2PModerationHint(ctx, b, chatID, labels)
 				return

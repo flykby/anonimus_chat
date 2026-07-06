@@ -60,7 +60,7 @@ func (a *App) onEndCallback(ctx context.Context, b *bot.Bot, update *models.Upda
 
 func (a *App) confirmEndDialog(ctx context.Context, b *bot.Bot, chatID, telegramID int64, profile apiclient.Profile, labels menu.Labels) {
 	if profile.ActiveDialogID == nil {
-		a.showMainMenu(ctx, b, chatID, profile)
+		a.showMainMenu(ctx, b, chatID, telegramID, profile)
 		return
 	}
 
@@ -71,7 +71,10 @@ func (a *App) confirmEndDialog(ctx context.Context, b *bot.Bot, chatID, telegram
 		return
 	}
 
-	a.sendReply(ctx, b, chatID, labels.EndDialogEnded, menu.MainKeyboard(labels))
+	a.showNavScreen(ctx, b, chatID, telegramID, []NavOutgoing{{
+		Text:     labels.EndDialogEnded,
+		Keyboard: menu.MainKeyboard(labels),
+	}})
 
 	if resp.PartnerTelegramID != nil {
 		partnerLabels := labels

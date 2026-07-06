@@ -17,6 +17,7 @@ import (
 	"github.com/flykby/anonimus_chat/internal/bot/handlers"
 	iredis "github.com/flykby/anonimus_chat/internal/redis"
 	"github.com/flykby/anonimus_chat/internal/redis/fsm"
+	"github.com/flykby/anonimus_chat/internal/redis/navscreen"
 	"github.com/flykby/anonimus_chat/internal/redis/regdraft"
 )
 
@@ -89,6 +90,7 @@ func runTelegramBot(ctx context.Context, logger *slog.Logger, cfg config.Config)
 		Logger:       logger,
 		FSM:          fsm.New(rdb),
 		Draft:        regdraft.New(rdb),
+		NavScreen:    navscreen.New(rdb),
 		API:          apiclient.NewClient(cfg.APIURL),
 		ReportChatID: cfg.ReportChatID,
 	}
