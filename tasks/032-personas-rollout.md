@@ -2,7 +2,7 @@
 
 **Статус:** todo  
 **Фаза:** metrics  
-**Зависимости:** 017, 020
+**Зависимости:** 017, 020, 039
 
 ## Описание
 
@@ -38,9 +38,11 @@
 - Не коммитить сгенерированные изображения в git (только scripts)
 - `personas.weight` для controlled rollout
 - Качество «пластик» — субъективно, использовать median_dialog_duration как главную метрику (033)
+- Character sheets и image prompts — из [039](039-persona-generation-prompts.md); здесь только rollout готовых ассетов
 
 ## Out of scope
 
 - Real-time photo generation
+- Authoring toolkit / invent prompts (039)
 - User-facing persona picker
 - Male AI personas

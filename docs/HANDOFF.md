@@ -195,7 +195,7 @@ scripts/deploy.sh            — prod deploy + migrate
 
 | Блок | Задачи | Заметки |
 |------|--------|---------|
-| Real AI | 036 → 016 → 017–019 | RunPod LLM вместо echo |
+| Real AI | 036 → 016 → 017–019, **039** | RunPod LLM вместо echo; 039 — toolkit промптов персонажей |
 | Фото + Stars | 020–023, 031 | Каталог, blur, оплата, premium UI |
 | Delete unlock UI | часть 029 + 021 | Бесплатный unlock adult-фото |
 | Live F priority | 037 | Приоритет живых F в очереди M→F |
@@ -208,7 +208,7 @@ scripts/deploy.sh            — prod deploy + migrate
 
 | Приоритет | Блок | Задачи | Зачем |
 |-----------|------|--------|-------|
-| **A** | Real AI | 036 → 016 → 017 → 018 → 019 | Echo → настоящие диалоги с персонами |
+| **A** | Real AI | 036 → 016 → 017 → 018 → 019 (+ 039) | Echo → настоящие диалоги с персонами |
 | **B** | Монетизация | 020 → 021 → 022 → 023 → 031 | Фото, blur, Stars, premium |
 | **C** | Match UX | 037 | Live F priority для M→F |
 | **D** | Ops | 009, 032–035 | Webhook, метрики, launch checklist |

@@ -92,7 +92,7 @@ flowchart TD
 
 | Приоритет | Блок | Задачи | Зачем |
 |-----------|------|--------|-------|
-| **A** | Real AI | 036 → 016 → 017 → 018 → 019 | Echo → настоящие диалоги с персонами |
+| **A** | Real AI | 036 → 016 → 017 → 018 → 019 (+ **039** prompts toolkit) | Echo → настоящие диалоги с персонами |
 | **B** | Монетизация | 020 → 021 → 022 → 023 → 031 | Фото, blur, Stars, premium |
 | **C** | Match UX | 037 | Live F priority для M→F |
 | **D** | Ops | 009, 032–035 | Webhook, метрики, launch checklist |
@@ -150,6 +150,7 @@ flowchart LR
 | 036 | [RunPod inference (LLM + embeddings)](036-runpod-inference.md) | todo |
 | 016 | [AI dialog service](016-ai-dialog-service.md) | todo |
 | 017 | [Persona prompts](017-persona-prompts.md) | todo |
+| 039 | [Persona generation prompts & templates](039-persona-generation-prompts.md) | todo |
 | 018 | [AI end dialog heuristics](018-ai-end-dialog-heuristics.md) | todo |
 | 019 | [Photo intent classifier](019-photo-intent-classifier.md) | todo |
 
