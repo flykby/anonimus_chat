@@ -143,6 +143,19 @@ bash scripts/deploy.sh --tag latest
 
 ## Rollback
 
+### Automatic (health failure)
+
+If the bot container does not become healthy after `compose up`, `deploy.sh`:
+
+1. Rolls DB schema back to the pre-deploy goose version
+2. Redeploys images from the last successful tag (`.deploy/current`)
+3. Exits non-zero so CI marks deploy as failed
+
+Requires at least one prior successful deploy (`.deploy/current` present).  
+If restore also fails health, the script exits with an error — check `docker logs anonimus-bot`.
+
+### Manual
+
 Rollback to the previous successful tag (< 2 min). Also rolls back DB schema one step (`goose down-to`):
 
 ```bash
@@ -225,7 +238,8 @@ Adjust `WorkingDirectory` in the unit file if not using `/opt/anonimus_chat`.
 |---------|-------|
 | `pull access denied` | `REGISTRY_USER` / `REGISTRY_PASSWORD`, `docker login` |
 | `address already in use` | Prod does not bind app ports on the host (only optional Caddy `:80/:443`). Stale Docker endpoints often survive `ss`. Run `docker compose -f docker-compose.yml -f docker-compose.prod.yml down --remove-orphans`, `docker rm -f anonimus-postgres anonimus-redis anonimus-api anonimus-ai anonimus-bot`, `git pull`, redeploy. `deploy.sh` also removes containers stuck in `created` state. If it persists: `systemctl restart docker` |
-| Bot unhealthy | `docker logs anonimus-bot`, verify `BOT_TOKEN` |
+| Bot unhealthy | `docker logs anonimus-bot`, verify `BOT_TOKEN`. After a failed deploy, auto-rollback should restore `.deploy/current`; if not: `bash scripts/deploy.sh --rollback` |
+| Auto-rollback skipped | First deploy has no `.deploy/current` yet — only migration rollback runs |
 | Webhook: `permission denied` on `webhook.key` | Bot runs as uid 65534; key must be world-readable: `chmod 644 certs/webhook.key` then restart bot |
 | Webhook: bot silent, health OK | Check `WEBHOOK_URL` uses **public** IP (`curl -4 ifconfig.me`), cert CN must match; open port 8443 in provider firewall |
 | Webhook: `too many requests` on register | Telegram rate-limits `setWebhook`; wait 1–2 min, fix cert/permissions, then restart once |

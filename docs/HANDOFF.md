@@ -36,7 +36,8 @@ Telegram → bot → api → postgres / redis
 ```
 
 **CI/CD:** push в `main` → lint/test → docker build → push registry → SSH deploy на VM.  
-**Деплой:** `scripts/remote-deploy.sh` → `scripts/deploy.sh` → postgres healthy → **goose migrate up** → compose up.
+**Деплой:** `scripts/remote-deploy.sh` → `scripts/deploy.sh` → postgres healthy → **goose migrate up** → compose up → bot healthy.  
+Если health после `compose up` падает — авто-откат миграций + образов с последнего успешного tag (`.deploy/current`), CI exit ≠ 0.
 
 > **⚠️ Главное правило git:** все изменения **пушить сразу в `main`**.  
 > Не создавать feature branches и PR — CI auto-deploy срабатывает только на push в `main`.  

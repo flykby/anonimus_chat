@@ -15,9 +15,11 @@ MIGRATION_SKIP=false
 MIGRATION_BEFORE=""
 IMAGE_TAG=""
 CLI_IMAGE_TAG=""
+LAST_GOOD_TAG=""
 ROLLBACK=false
 WITH_PROXY=false
 SKIP_PULL=false
+IN_AUTO_ROLLBACK=false
 
 log() {
 	echo "[deploy] $*"
@@ -116,6 +118,20 @@ resolve_tag() {
 
 	if [[ -z "$IMAGE_TAG" ]]; then
 		die "IMAGE_TAG is not set (use --tag or set in $ENV_FILE)"
+	fi
+}
+
+capture_last_good_tag() {
+	LAST_GOOD_TAG=""
+	if [[ "$ROLLBACK" == true ]]; then
+		return 0
+	fi
+	local current_file="${DEPLOY_STATE_DIR}/current"
+	if [[ -f "$current_file" ]]; then
+		LAST_GOOD_TAG="$(tr -d '[:space:]' <"$current_file")"
+		if [[ -n "$LAST_GOOD_TAG" ]]; then
+			log "last good deploy tag: $LAST_GOOD_TAG"
+		fi
 	fi
 }
 
@@ -221,6 +237,9 @@ rollback_migrations_on_failure() {
 }
 
 on_deploy_failure() {
+	if [[ "$IN_AUTO_ROLLBACK" == true ]]; then
+		return 0
+	fi
 	rollback_migrations_on_failure
 }
 
@@ -241,7 +260,49 @@ wait_healthy() {
 		fi
 		sleep 2
 	done
-	die "bot did not become healthy within $((attempts * 2))s"
+	log "bot did not become healthy within $((attempts * 2))s"
+	return 1
+}
+
+# After a failed health check: restore DB schema and last known-good images.
+auto_rollback_after_health_failure() {
+	local failed_tag="$IMAGE_TAG"
+	log "health check failed for tag=$failed_tag — starting auto-rollback"
+
+	IN_AUTO_ROLLBACK=true
+	rollback_migrations_on_failure
+
+	if [[ "$ROLLBACK" == true ]]; then
+		log "already in --rollback mode; skipping image restore"
+		return 1
+	fi
+	if [[ -z "$LAST_GOOD_TAG" ]]; then
+		log "no previous successful tag in ${DEPLOY_STATE_DIR}/current — cannot restore images"
+		return 1
+	fi
+	if [[ "$LAST_GOOD_TAG" == "$failed_tag" ]]; then
+		log "last good tag equals failed tag ($failed_tag) — cannot restore images"
+		return 1
+	fi
+
+	IMAGE_TAG="$LAST_GOOD_TAG"
+	export IMAGE_TAG
+	log "restoring previous images: $IMAGE_TAG"
+	if ! pull_images; then
+		log "warning: pull of rollback images failed"
+		return 1
+	fi
+	if ! compose_up; then
+		log "warning: compose up of rollback images failed"
+		return 1
+	fi
+	if wait_healthy; then
+		log "auto-rollback succeeded: ${REGISTRY_URL}/*:${IMAGE_TAG}"
+		show_status
+		return 0
+	fi
+	log "error: auto-rollback to $IMAGE_TAG also failed health check"
+	return 1
 }
 
 save_deploy_state() {
@@ -291,6 +352,7 @@ main() {
 	parse_args "$@"
 	load_env
 	resolve_tag
+	capture_last_good_tag
 	registry_login
 	pull_images
 	cleanup_stale_endpoints
@@ -299,7 +361,14 @@ main() {
 	wait_postgres_healthy
 	run_migrations
 	compose_up
-	wait_healthy
+	if ! wait_healthy; then
+		trap - ERR
+		local failed_tag="$IMAGE_TAG"
+		if auto_rollback_after_health_failure; then
+			die "deploy of ${failed_tag} failed health check; rolled back to ${IMAGE_TAG}"
+		fi
+		die "deploy of ${failed_tag} failed health check; auto-rollback could not restore previous version"
+	fi
 	trap - ERR
 	save_deploy_state
 	show_status
